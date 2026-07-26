@@ -29,8 +29,8 @@ Real-time coastal hazard mapping and community reporting along India’s shoreli
 ### Install and run
 
 ```bash
-git clone <your-repo-url>
-cd ocean-hazard-platform_3
+git clone https://github.com/AnantTux/AnantTatt
+cd AnantTatt
 pnpm install
 pnpm dev
 ```

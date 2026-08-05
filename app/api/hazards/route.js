@@ -4,6 +4,7 @@ import { saveHazardPhotos } from "@/lib/save-hazard-photos";
 import { parseHazardFormData, validateHazardInput } from "@/lib/hazard-validation";
 import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/auth";
+import { checkHazardSubmissionRateLimit, getRequestIp } from "@/lib/hazard-rate-limit";
 export const dynamic = "force-dynamic";
 export async function GET() {
     try {
@@ -19,6 +20,13 @@ export async function POST(request) {
         const user = await getCurrentUser();
         if (!user)
             return NextResponse.json({ error: "Sign in with a verified account to report a hazard." }, { status: 401 });
+        const rateLimit = await checkHazardSubmissionRateLimit(getRequestIp(request));
+        if (!rateLimit.allowed) {
+            return NextResponse.json({ error: "You can submit up to 3 hazard reports per hour." }, {
+                status: 429,
+                headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+            });
+        }
         const contentType = request.headers.get("content-type") ?? "";
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();

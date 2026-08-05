@@ -31,8 +31,9 @@ The core hazard-reporting workflow is functional: verified users can submit geol
 - Reports and emergency flags are community-submitted and do not notify emergency services.
 - Regional hazard-alert emails are not implemented yet; account verification and password-reset emails require Resend in production.
 - Social-media analytics currently use illustrative sample data.
-- Uploaded photos use local filesystem storage; production deployments should use object storage.
+- Photo uploads use Vercel Blob in production and local storage only during local development.
 - Native WebSockets require a long-running Node.js server. On Vercel, the app automatically uses long-polling until a managed realtime service is added.
+- Active reports expire after six hours unless their original reporter confirms they are still active. Configure an external scheduler to call the protected expiry endpoint every hour before deploying this feature.
 - Moderation, rate limiting, duplicate detection, and verified responder roles are not yet implemented.
 
 ## Tech stack
@@ -151,8 +152,14 @@ Open [http://localhost:3000](http://localhost:3000). The first submitted report 
 | `MONGODB_URI` | MongoDB connection string used to persist hazard reports |
 | `RESEND_API_KEY` | Resend API key for account verification and password-reset emails in production |
 | `AUTH_EMAIL_FROM` | Sender address on a domain verified with Resend |
+| `CRON_SECRET` | Long random value used to protect the automated report-expiry endpoint |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob read/write token for permanent production photo uploads |
 
 When the two email variables are omitted during local development, the signup and password-reset screens display the one-time development code. Production never returns these codes to the browser.
+
+### Automated report expiry
+
+New reports stay active for six hours. A scheduler should make an hourly request to `GET /api/cron/expire-hazards` with the header `Authorization: Bearer <CRON_SECRET>`. It marks overdue reports as expired, removes them from the public map, and sends a live-update event. The original reporter can renew an active report with `POST /api/hazards/<id>/confirm-active` while signed in.
 
 ### Account suspension
 
@@ -164,7 +171,11 @@ pnpm user:suspend user@example.com Repeated false reports
 
 Suspension immediately removes all sessions and prevents future login. The user record and moderation reason remain in MongoDB for review.
 
-Hazard reports are stored in MongoDB. Uploaded photos are stored under `public/uploads/hazards/` (gitignored); use object storage such as S3, Cloudinary, or Supabase Storage for production deployments.
+Hazard reports are stored in MongoDB. In production, photos are stored in Vercel Blob; create a public Blob store connected to the Vercel project and it will provide `BLOB_READ_WRITE_TOKEN`. Local development continues to store uploads under `public/uploads/hazards/` (gitignored).
+
+### Nearby hazards API
+
+Reports now store a MongoDB GeoJSON location with a `2dsphere` index. Clients can retrieve up to 100 active reports near a point through `GET /api/hazards/near?lat=28.6139&lng=77.209&radiusKm=5`; the maximum radius is 50 km.
 
 ## Scripts
 

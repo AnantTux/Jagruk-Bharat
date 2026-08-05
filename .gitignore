@@ -29,3 +29,8 @@ next-env.d.ts
 
 # uploaded hazard photos (local dev storage)
 /public/uploads/hazards/
+
+# test output
+/coverage/
+/playwright-report/
+/test-results/

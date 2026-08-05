@@ -14,18 +14,6 @@ export default function SocialAnalyticsDashboard() {
     const [selectedPlatform, setSelectedPlatform] = useState("all");
     const [timeRange, setTimeRange] = useState("24h");
     const [sentimentFilter, setSentimentFilter] = useState("all");
-    const getSentimentColor = (sentiment) => {
-        switch (sentiment) {
-            case "positive":
-                return "text-green-400";
-            case "warning":
-                return "text-yellow-400";
-            case "negative":
-                return "text-red-400";
-            default:
-                return "text-slate-400";
-        }
-    };
     const getSentimentBadge = (sentiment) => {
         switch (sentiment) {
             case "positive":
@@ -38,7 +26,7 @@ export default function SocialAnalyticsDashboard() {
                 return "bg-slate-600 text-white";
         }
     };
-    const getPlatformIcon = (platform) => {
+    const getPlatformIcon = () => {
         // Return appropriate platform icon based on platform name
         return MessageSquare;
     };

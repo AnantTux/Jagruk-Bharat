@@ -47,7 +47,7 @@ The core hazard-reporting workflow is functional: users can submit geolocated re
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 20 or later
+- [Node.js](https://nodejs.org/) 22 or later
 - [pnpm](https://pnpm.io/) 9 or later
 - A MongoDB database: either [MongoDB Community Server](https://www.mongodb.com/try/download/community) running locally or a free [MongoDB Atlas](https://www.mongodb.com/atlas/database) cluster
 
@@ -158,7 +158,10 @@ Hazard reports are stored in MongoDB. Uploaded photos are stored under `public/u
 | `pnpm dev` | Start development server |
 | `pnpm build` | Production build |
 | `pnpm start` | Run production server |
-| `pnpm lint` | Run ESLint (configure ESLint first) |
+| `pnpm lint` | Run ESLint with Next.js Core Web Vitals rules |
+| `pnpm test` | Run unit and API tests |
+| `pnpm test:e2e` | Run the browser-based report-flow test |
+| `pnpm check` | Run lint, unit/API tests, and the production build |
 
 ## Project structure
 

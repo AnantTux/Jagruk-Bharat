@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { dashboardHazardTypes as hazardTypes } from "@/lib/hazard-config";
 import { Camera, Layers, MapPin, RefreshCw, Search, Settings, Thermometer, Eye, EyeOff, ThumbsDown, ThumbsUp, } from "lucide-react";
 export default function MapDashboard() {
-    const { hazards, loading, error, refresh, voteHazard } = useHazards();
+    const { hazards, loading, error, lastUpdatedAt, refresh, voteHazard } = useHazards();
     const [selectedHazard, setSelectedHazard] = useState(null);
     const [showHeatMap, setShowHeatMap] = useState(true);
     const [showClusters, setShowClusters] = useState(true);
@@ -29,13 +29,13 @@ export default function MapDashboard() {
     const [searchLabel, setSearchLabel] = useState(null);
     const [votingId, setVotingId] = useState(null);
     const filteredHazards = useMemo(() => {
-        const cutoff = Date.now() - timeRange[0] * 60 * 60 * 1000;
+        const cutoff = lastUpdatedAt - timeRange[0] * 60 * 60 * 1000;
         return hazards.filter((h) => {
             const inRange = new Date(h.createdAt).getTime() >= cutoff;
             const typeOk = activeFilters.length === 0 || activeFilters.includes(h.type);
             return inRange && typeOk;
         });
-    }, [hazards, timeRange, activeFilters]);
+    }, [hazards, timeRange, activeFilters, lastUpdatedAt]);
     const stats = useMemo(() => {
         const high = filteredHazards.filter((h) => h.severity === "high").length;
         const medium = filteredHazards.filter((h) => h.severity === "medium").length;

@@ -10,11 +10,15 @@ export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFA
     const heatLayerRef = useRef(null);
     const pickMarkerRef = useRef(null);
     const onMapClickRef = useRef(onMapClick);
-    onMapClickRef.current = onMapClick;
+    useEffect(() => {
+        onMapClickRef.current = onMapClick;
+    }, [onMapClick]);
     useEffect(() => {
         if (!containerRef.current || mapRef.current)
             return;
         let cancelled = false;
+        let animationFrameId;
+        let timeoutId;
         void import("leaflet").then((L) => {
             if (cancelled || !containerRef.current || mapRef.current)
                 return;
@@ -35,12 +39,19 @@ export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFA
             map.on("click", (e) => {
                 onMapClickRef.current?.(e.latlng.lat, e.latlng.lng);
             });
-            const invalidate = () => map.invalidateSize();
-            requestAnimationFrame(invalidate);
-            setTimeout(invalidate, 100);
+            const invalidate = () => {
+                if (!cancelled && mapRef.current === map)
+                    map.invalidateSize();
+            };
+            animationFrameId = requestAnimationFrame(invalidate);
+            timeoutId = setTimeout(invalidate, 100);
         });
         return () => {
             cancelled = true;
+            if (animationFrameId !== undefined)
+                cancelAnimationFrame(animationFrameId);
+            if (timeoutId !== undefined)
+                clearTimeout(timeoutId);
             if (mapRef.current) {
                 mapRef.current.remove();
                 mapRef.current = null;

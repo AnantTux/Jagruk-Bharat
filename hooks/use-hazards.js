@@ -6,6 +6,7 @@ export function useHazards() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [lastUpdatedAt, setLastUpdatedAt] = useState(0);
     const mounted = useRef(true);
     const refresh = useCallback(async () => {
         try {
@@ -15,6 +16,7 @@ export function useHazards() {
             const data = (await res.json());
             if (mounted.current) {
                 setHazards(data.hazards);
+                setLastUpdatedAt(Date.now());
                 setError(null);
             }
         }
@@ -93,5 +95,5 @@ export function useHazards() {
         await refresh();
         return data.hazard;
     }, [refresh]);
-    return { hazards, loading, error, submitting, refresh, submitHazard, voteHazard };
+    return { hazards, loading, error, submitting, lastUpdatedAt, refresh, submitHazard, voteHazard };
 }

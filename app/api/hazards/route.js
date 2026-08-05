@@ -1,60 +1,9 @@
 import { NextResponse } from "next/server";
 import { createHazard, listHazards } from "@/lib/hazard-store";
 import { saveHazardPhotos } from "@/lib/save-hazard-photos";
-import { HAZARD_TYPE_IDS } from "@/lib/hazard-config";
+import { parseHazardFormData, validateHazardInput } from "@/lib/hazard-validation";
 import { randomUUID } from "crypto";
 export const dynamic = "force-dynamic";
-function isSeverity(value) {
-    return value === "low" || value === "medium" || value === "high";
-}
-function parseHazardFields(formData) {
-    const type = formData.get("type");
-    const severity = formData.get("severity");
-    const lat = Number(formData.get("lat"));
-    const lng = Number(formData.get("lng"));
-    if (typeof type !== "string" || !HAZARD_TYPE_IDS.has(type))
-        return null;
-    if (!isSeverity(severity))
-        return null;
-    if (!Number.isFinite(lat) || !Number.isFinite(lng))
-        return null;
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180)
-        return null;
-    const description = formData.get("description");
-    const locationDescription = formData.get("locationDescription");
-    const emergency = formData.get("emergency");
-    return {
-        type,
-        severity,
-        lat,
-        lng,
-        description: typeof description === "string" && description ? description : undefined,
-        locationDescription: typeof locationDescription === "string" && locationDescription ? locationDescription : undefined,
-        emergency: emergency === "true" || emergency === "1",
-    };
-}
-function validateJsonBody(body) {
-    if (!body.type || typeof body.type !== "string" || !HAZARD_TYPE_IDS.has(body.type))
-        return null;
-    if (!isSeverity(body.severity))
-        return null;
-    const lat = Number(body.lat);
-    const lng = Number(body.lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng))
-        return null;
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180)
-        return null;
-    return {
-        type: body.type,
-        severity: body.severity,
-        lat,
-        lng,
-        description: body.description,
-        locationDescription: body.locationDescription,
-        emergency: Boolean(body.emergency),
-        photoUrls: body.photoUrls,
-    };
-}
 export async function GET() {
     try {
         return NextResponse.json({ hazards: await listHazards() });
@@ -69,7 +18,7 @@ export async function POST(request) {
         const contentType = request.headers.get("content-type") ?? "";
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
-            const fields = parseHazardFields(formData);
+            const fields = parseHazardFormData(formData);
             if (!fields) {
                 return NextResponse.json({ error: "Invalid hazard fields" }, { status: 400 });
             }
@@ -94,7 +43,7 @@ export async function POST(request) {
             return NextResponse.json({ hazard }, { status: 201 });
         }
         const body = (await request.json());
-        const input = validateJsonBody(body);
+        const input = validateHazardInput(body);
         if (!input) {
             return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
         }

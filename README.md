@@ -2,13 +2,37 @@
 
 Real-time coastal hazard mapping and community reporting along India’s shoreline. Report hazards on the map, follow live updates, and help keep coastal communities informed.
 
+> [!IMPORTANT]
+> AnantTatt is an experimental MVP created for educational and portfolio purposes. Community reports are not independently verified, and the platform is not affiliated with emergency services. In an emergency, contact the appropriate local authorities directly.
+
+## Project status
+
+The core hazard-reporting workflow is functional: users can submit geolocated reports, attach photos, view reports on an interactive map, and vote on their reliability. Account authentication and the social analytics dashboard are currently demonstration interfaces and are not connected to production services.
+
 ## Features
 
 - **Live hazard map** — Interactive map with severity markers and hazard details
 - **Report hazards** — Submit type, severity, location, description, and photos
 - **Dashboard** — Focused map view for monitoring active reports
 - **Analytics** — Overview of hazard trends and activity
-- **Accounts** — Email/password sign-up and sign-in (UI; wire to your auth provider for production)
+- **Community verification** — Upvote or downvote reports to contribute to their trust score
+- **Accounts** — Email/password sign-up and sign-in interface (authentication provider not yet connected)
+
+## How it works
+
+1. A community member reports a coastal hazard and selects its location on the map.
+2. The report is validated by the API and stored in MongoDB.
+3. Submitted photos are saved with the report and displayed in its details.
+4. The public map refreshes automatically to show recent reports.
+5. Community members can confirm or dispute reports through voting.
+
+## Current limitations
+
+- Reports and emergency flags are community-submitted and do not notify emergency services.
+- Authentication, password reset, and regional email notifications are UI-only.
+- Social-media analytics currently use illustrative sample data.
+- Uploaded photos use local filesystem storage; production deployments should use object storage.
+- Moderation, rate limiting, duplicate detection, and verified responder roles are not yet implemented.
 
 ## Tech stack
 
@@ -154,8 +178,8 @@ public/           # Static assets
 
 - **Email:** anantkaurav53@gmail.com
 - **LinkedIn:** [Anant Kaurav](https://www.linkedin.com/in/anant-kaurav-83a6b1361)
-- **GitHub:** [AnantTux](https://github.com/AnantTux/DiaPredict)
+- **GitHub:** [AnantTux](https://github.com/AnantTux)
 
 ## License
 
-Private project unless otherwise noted by the repository owner.
+This project is open source and available under the [MIT License](LICENSE).

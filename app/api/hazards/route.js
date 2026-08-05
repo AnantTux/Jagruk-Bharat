@@ -3,6 +3,7 @@ import { createHazard, listHazards } from "@/lib/hazard-store";
 import { saveHazardPhotos } from "@/lib/save-hazard-photos";
 import { parseHazardFormData, validateHazardInput } from "@/lib/hazard-validation";
 import { randomUUID } from "crypto";
+import { getCurrentUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 export async function GET() {
     try {
@@ -15,6 +16,9 @@ export async function GET() {
 }
 export async function POST(request) {
     try {
+        const user = await getCurrentUser();
+        if (!user)
+            return NextResponse.json({ error: "Sign in with a verified account to report a hazard." }, { status: 401 });
         const contentType = request.headers.get("content-type") ?? "";
         if (contentType.includes("multipart/form-data")) {
             const formData = await request.formData();
@@ -39,6 +43,7 @@ export async function POST(request) {
                 locationDescription: fields.locationDescription,
                 emergency: fields.emergency,
                 photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
+                reportedByUserId: user._id,
             }, hazardId);
             return NextResponse.json({ hazard }, { status: 201 });
         }
@@ -47,7 +52,7 @@ export async function POST(request) {
         if (!input) {
             return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
         }
-        const hazard = await createHazard(input);
+        const hazard = await createHazard({ ...input, reportedByUserId: user._id });
         return NextResponse.json({ hazard }, { status: 201 });
     }
     catch (e) {

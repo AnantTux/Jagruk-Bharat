@@ -24,7 +24,7 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 120000,
         env: {
-            MONGODB_URI: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ananttatt-test",
+            MONGODB_URI: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/jagruk-bharat-test",
         },
     },
 });

@@ -1,6 +1,15 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-const POLL_MS = 3000;
+const LONG_POLL_TIMEOUT_MS = 25000;
+const RETRY_DELAY_MS = 1500;
+
+function getHazardSocketUrl() {
+    if (process.env.NEXT_PUBLIC_HAZARD_WS_URL) {
+        return process.env.NEXT_PUBLIC_HAZARD_WS_URL;
+    }
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${window.location.host}/ws/hazards`;
+}
 export function useHazards() {
     const [hazards, setHazards] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -33,10 +42,90 @@ export function useHazards() {
     useEffect(() => {
         mounted.current = true;
         refresh();
-        const id = setInterval(refresh, POLL_MS);
+        let cancelled = false;
+        let socket;
+        let fallbackStarted = false;
+        let connectionTimeout;
+        let retryTimeout;
+        let abortController;
+
+        const waitToRetry = () => new Promise((resolve) => {
+            retryTimeout = setTimeout(resolve, RETRY_DELAY_MS);
+        });
+
+        const startLongPolling = async () => {
+            if (fallbackStarted)
+                return;
+            fallbackStarted = true;
+
+            while (!cancelled) {
+                abortController = new AbortController();
+                try {
+                    const response = await fetch(`/api/hazards/stream?timeout=${LONG_POLL_TIMEOUT_MS}`, {
+                        cache: "no-store",
+                        signal: abortController.signal,
+                    });
+                    if (!response.ok)
+                        throw new Error("Live updates are unavailable");
+                    if (!cancelled)
+                        await refresh();
+                }
+                catch (e) {
+                    if (!cancelled && e?.name !== "AbortError")
+                        await waitToRetry();
+                }
+            }
+        };
+
+        const startFallback = () => {
+            void startLongPolling();
+        };
+
+        if (typeof WebSocket === "undefined") {
+            startFallback();
+        }
+        else {
+            try {
+                socket = new WebSocket(getHazardSocketUrl());
+                connectionTimeout = setTimeout(() => {
+                    if (socket?.readyState !== WebSocket.OPEN) {
+                        socket?.close();
+                        startFallback();
+                    }
+                }, 3000);
+
+                socket.onopen = () => {
+                    clearTimeout(connectionTimeout);
+                };
+                socket.onmessage = (message) => {
+                    try {
+                        const event = JSON.parse(message.data);
+                        if (event.type === "hazards-updated")
+                            void refresh();
+                    }
+                    catch {
+                        // Ignore malformed messages and keep the connection alive.
+                    }
+                };
+                socket.onerror = () => socket.close();
+                socket.onclose = () => {
+                    clearTimeout(connectionTimeout);
+                    if (!cancelled)
+                        startFallback();
+                };
+            }
+            catch {
+                startFallback();
+            }
+        }
+
         return () => {
+            cancelled = true;
             mounted.current = false;
-            clearInterval(id);
+            clearTimeout(connectionTimeout);
+            clearTimeout(retryTimeout);
+            abortController?.abort();
+            socket?.close();
         };
     }, [refresh]);
     const submitHazard = useCallback(async (input, photos) => {
@@ -83,17 +172,23 @@ export function useHazards() {
         }
     }, [refresh]);
     const voteHazard = useCallback(async (id, direction) => {
-        const res = await fetch(`/api/hazards/${id}/vote`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ direction }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-            throw new Error(data.error ?? "Failed to record vote");
+        try {
+            const res = await fetch(`/api/hazards/${id}/vote`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ direction }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error ?? "Failed to record vote");
+            }
+            await refresh();
+            return data.hazard;
         }
-        await refresh();
-        return data.hazard;
+        catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to record vote");
+            throw e;
+        }
     }, [refresh]);
     return { hazards, loading, error, submitting, lastUpdatedAt, refresh, submitHazard, voteHazard };
 }

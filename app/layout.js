@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import "./globals.css";
 import 'leaflet/dist/leaflet.css';
 export const metadata = {
-    title: "AnantTatt — India Safety Network",
+    title: "Jagruk Bharat — India Safety Network",
     description: "Community-powered public hazard reporting and live safety mapping across India.",
 };
 export default function RootLayout({ children, }) {

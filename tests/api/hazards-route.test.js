@@ -9,12 +9,18 @@ vi.mock("@/lib/save-hazard-photos", () => ({
     saveHazardPhotos: vi.fn(),
 }));
 
+vi.mock("@/lib/auth", () => ({
+    getCurrentUser: vi.fn(),
+}));
+
 import { createHazard, listHazards } from "@/lib/hazard-store";
+import { getCurrentUser } from "@/lib/auth";
 import { GET, POST } from "@/app/api/hazards/route";
 
 describe("/api/hazards", () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        getCurrentUser.mockResolvedValue({ _id: "user-1" });
     });
 
     test("GET returns hazards from the store", async () => {
@@ -50,8 +56,23 @@ describe("/api/hazards", () => {
             severity: "high",
             lat: 28.6139,
             lng: 77.209,
+            reportedByUserId: "user-1",
         }));
         await expect(response.json()).resolves.toEqual({ hazard: created });
+    });
+
+    test("POST requires a verified signed-in user", async () => {
+        getCurrentUser.mockResolvedValue(null);
+        const request = new Request("http://localhost/api/hazards", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "flooding", severity: "high", lat: 20, lng: 75 }),
+        });
+
+        const response = await POST(request);
+
+        expect(response.status).toBe(401);
+        expect(createHazard).not.toHaveBeenCalled();
     });
 
     test("POST rejects invalid reports without calling the store", async () => {

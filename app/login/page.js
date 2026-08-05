@@ -1,11 +1,82 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Shield, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Shield, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
+
 export default function LoginPage() {
-    return (_jsxs("div", { className: "flex min-h-screen flex-col bg-slate-900", children: [_jsx("div", { className: "flex flex-1 items-center justify-center p-4", children: _jsxs("div", { className: "w-full max-w-md", children: [_jsx("div", { className: "mb-6", children: _jsxs(Link, { href: "/", className: "inline-flex items-center text-sm text-slate-400 hover:text-white transition-colors", children: [_jsx(ArrowLeft, { className: "w-4 h-4 mr-2" }), "Back to Home"] }) }), _jsxs(Card, { className: "shadow-lg border-slate-700 bg-slate-800/90 backdrop-blur-sm", children: [_jsxs(CardHeader, { className: "text-center pb-6", children: [_jsx("div", { className: "flex items-center justify-center mb-4", children: _jsx("div", { className: "flex items-center justify-center w-12 h-12 bg-amber-400 rounded-xl", children: _jsx(ShieldCheck, { className: "w-7 h-7 text-slate-800" }) }) }), _jsx(CardTitle, { className: "text-2xl font-bold text-white", children: "Welcome Back" }), _jsx(CardDescription, { className: "text-slate-300", children: "Sign in to your AnantTatt account to continue reporting and monitoring public hazards across India." })] }), _jsxs(CardContent, { className: "space-y-6", children: [_jsxs("form", { className: "space-y-4", children: [_jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "email", className: "text-sm font-medium text-white", children: "Email Address" }), _jsx(Input, { id: "email", type: "email", placeholder: "Enter your email", className: "h-11 bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-amber-400 focus:ring-amber-400/20", required: true })] }), _jsxs("div", { className: "space-y-2", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx(Label, { htmlFor: "password", className: "text-sm font-medium text-white", children: "Password" }), _jsx(Link, { href: "/forgot-password", className: "text-sm text-amber-400 hover:text-amber-300 transition-colors", children: "Forgot password?" })] }), _jsx(Input, { id: "password", type: "password", placeholder: "Enter your password", className: "h-11 bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-amber-400 focus:ring-amber-400/20", required: true })] }), _jsxs(Button, { type: "submit", className: "w-full h-11 text-base font-medium bg-amber-400 text-slate-800 hover:bg-amber-500", children: [_jsx(Shield, { className: "w-4 h-4 mr-2" }), "Sign In"] })] }), _jsxs("div", { className: "text-center text-sm text-slate-400", children: ["Don't have an account?", " ", _jsx(Link, { href: "/signup", className: "text-amber-400 hover:text-amber-300 font-medium transition-colors", children: "Sign up here" })] })] })] })] }) }), _jsx(SiteFooter, { compact: true })] }));
+    const router = useRouter();
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState("");
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+        setSubmitting(true);
+        setError("");
+        const form = new FormData(event.currentTarget);
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: form.get("email"), password: form.get("password") }),
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw new Error(data.error || "Unable to sign in.");
+            router.push("/dashboard");
+            router.refresh();
+        }
+        catch (loginError) {
+            setError(loginError instanceof Error ? loginError.message : "Unable to sign in.");
+        }
+        finally {
+            setSubmitting(false);
+        }
+    }
+
+    return <div className="flex min-h-screen flex-col bg-slate-900">
+        <main className="flex flex-1 items-center justify-center p-4">
+            <div className="w-full max-w-md">
+                <Link href="/" className="mb-6 inline-flex items-center text-sm text-slate-400 hover:text-white">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Home
+                </Link>
+                <Card className="border-slate-700 bg-slate-800/90 shadow-lg">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400">
+                            <ShieldCheck className="h-7 w-7 text-slate-800" />
+                        </div>
+                        <CardTitle className="text-2xl text-white">Welcome Back</CardTitle>
+                        <CardDescription className="text-slate-300">Sign in with your verified Jagruk Bharat account.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {error && <p role="alert" className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+                            <div className="space-y-2">
+                                <Label htmlFor="email" className="text-white">Email Address</Label>
+                                <Input id="email" name="email" type="email" autoComplete="email" required className="h-11 border-slate-600 bg-slate-700 text-white" />
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between">
+                                    <Label htmlFor="password" className="text-white">Password</Label>
+                                    <Link href="/forgot-password" className="text-sm text-amber-400 hover:text-amber-300">Forgot password?</Link>
+                                </div>
+                                <Input id="password" name="password" type="password" autoComplete="current-password" required className="h-11 border-slate-600 bg-slate-700 text-white" />
+                            </div>
+                            <Button disabled={submitting} className="h-11 w-full bg-amber-400 text-slate-900 hover:bg-amber-500">
+                                <Shield className="mr-2 h-4 w-4" /> {submitting ? "Signing in…" : "Sign In"}
+                            </Button>
+                        </form>
+                        <p className="mt-6 text-center text-sm text-slate-400">Don&apos;t have an account? <Link href="/signup" className="font-medium text-amber-400">Sign up here</Link></p>
+                    </CardContent>
+                </Card>
+            </div>
+        </main>
+        <SiteFooter compact />
+    </div>;
 }

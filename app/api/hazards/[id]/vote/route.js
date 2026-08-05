@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { voteHazard } from "@/lib/hazard-store";
+import { getCurrentUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 export async function POST(request, context) {
     const { id } = await context.params;
@@ -13,9 +14,16 @@ export async function POST(request, context) {
     if (body.direction !== "up" && body.direction !== "down") {
         return NextResponse.json({ error: "direction must be up or down" }, { status: 400 });
     }
-    const hazard = await voteHazard(id, body.direction);
-    if (!hazard) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return NextResponse.json({ error: "Sign in with a verified account to vote." }, { status: 401 });
+    }
+    const result = await voteHazard(id, user._id, body.direction);
+    if (result.reason === "not-found") {
         return NextResponse.json({ error: "Hazard not found" }, { status: 404 });
     }
-    return NextResponse.json({ hazard });
+    if (result.reason === "already-voted") {
+        return NextResponse.json({ error: "You have already voted on this hazard." }, { status: 409 });
+    }
+    return NextResponse.json({ hazard: result.hazard });
 }

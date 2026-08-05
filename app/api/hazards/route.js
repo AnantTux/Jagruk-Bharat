@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHazard, listHazards } from "@/lib/hazard-store";
 import { saveHazardPhotos } from "@/lib/save-hazard-photos";
+import { HAZARD_TYPE_IDS } from "@/lib/hazard-config";
 import { randomUUID } from "crypto";
 export const dynamic = "force-dynamic";
 function isSeverity(value) {
@@ -11,7 +12,7 @@ function parseHazardFields(formData) {
     const severity = formData.get("severity");
     const lat = Number(formData.get("lat"));
     const lng = Number(formData.get("lng"));
-    if (typeof type !== "string" || !type)
+    if (typeof type !== "string" || !HAZARD_TYPE_IDS.has(type))
         return null;
     if (!isSeverity(severity))
         return null;
@@ -33,7 +34,7 @@ function parseHazardFields(formData) {
     };
 }
 function validateJsonBody(body) {
-    if (!body.type || typeof body.type !== "string")
+    if (!body.type || typeof body.type !== "string" || !HAZARD_TYPE_IDS.has(body.type))
         return null;
     if (!isSeverity(body.severity))
         return null;

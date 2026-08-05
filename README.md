@@ -1,26 +1,26 @@
-# AnantTatt — Endless Coast
+# AnantTatt — India Safety Network
 
-Real-time coastal hazard mapping and community reporting along India’s shoreline. Report hazards on the map, follow live updates, and help keep coastal communities informed.
+Community-powered public hazard reporting and live safety mapping across India. Report hazards on the map, follow live updates, and help people nearby make safer decisions.
 
 > [!IMPORTANT]
 > AnantTatt is an experimental MVP created for educational and portfolio purposes. Community reports are not independently verified, and the platform is not affiliated with emergency services. In an emergency, contact the appropriate local authorities directly.
 
 ## Project status
 
-The core hazard-reporting workflow is functional: users can submit geolocated reports, attach photos, view reports on an interactive map, and vote on their reliability. Account authentication and the social analytics dashboard are currently demonstration interfaces and are not connected to production services.
+The core hazard-reporting workflow is functional: users can submit geolocated reports, attach photos, view reports on an interactive map, and vote on their reliability. Supported categories include road accidents, fires, flooding, landslides, blocked routes, unsafe infrastructure, electrical hazards, pollution, and severe weather. Account authentication and the social analytics dashboard are currently demonstration interfaces and are not connected to production services.
 
 ## Features
 
 - **Live hazard map** — Interactive map with severity markers and hazard details
 - **Report hazards** — Submit type, severity, location, description, and photos
-- **Dashboard** — Focused map view for monitoring active reports
+- **Dashboard** — India-wide map view for monitoring and filtering active reports
 - **Analytics** — Overview of hazard trends and activity
 - **Community verification** — Upvote or downvote reports to contribute to their trust score
 - **Accounts** — Email/password sign-up and sign-in interface (authentication provider not yet connected)
 
 ## How it works
 
-1. A community member reports a coastal hazard and selects its location on the map.
+1. A community member reports a public hazard and selects its location on the map.
 2. The report is validated by the API and stored in MongoDB.
 3. Submitted photos are saved with the report and displayed in its details.
 4. The public map refreshes automatically to show recent reports.
@@ -38,9 +38,9 @@ The core hazard-reporting workflow is functional: users can submit geolocated re
 
 - [Next.js 16](https://nextjs.org/) (App Router)
 - [React 19](https://react.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
+- JavaScript
 - [Tailwind CSS](https://tailwindcss.com/)
-- [Leaflet](https://leafletjs.com/) / React Leaflet for maps
+- [Leaflet](https://leafletjs.com/) for maps
 - [Radix UI](https://www.radix-ui.com/) + shadcn-style components
 
 ## Installation

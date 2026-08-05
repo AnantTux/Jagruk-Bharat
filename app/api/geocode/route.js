@@ -22,7 +22,7 @@ export async function GET(request) {
         url.searchParams.set("countrycodes", "in");
         url.searchParams.set("limit", "1");
         const res = await fetch(url.toString(), {
-            headers: { "User-Agent": "AnantTatt-Coastal-Hazard-Map/1.0" },
+            headers: { "User-Agent": "AnantTatt-India-Hazard-Map/1.0" },
             next: { revalidate: 0 },
         });
         if (!res.ok) {

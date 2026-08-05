@@ -1,9 +1,9 @@
 "use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef } from "react";
-import { DEFAULT_ZOOM, INDIA_COAST_CENTER, severityColor } from "@/lib/hazard-utils";
+import { DEFAULT_ZOOM, INDIA_CENTER, severityColor } from "@/lib/hazard-utils";
 import { cn } from "@/lib/utils";
-export default function LeafletMap({ hazards, center = INDIA_COAST_CENTER, zoom = DEFAULT_ZOOM, className = "h-[450px] w-full rounded-xl", selectedId, showHeatMap = false, onMarkerClick, onMapClick, pickMode = false, pickMarker, }) {
+export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFAULT_ZOOM, className = "h-[450px] w-full rounded-xl", selectedId, showHeatMap = false, onMarkerClick, onMapClick, pickMode = false, pickMarker, }) {
     const containerRef = useRef(null);
     const mapRef = useRef(null);
     const layerGroupRef = useRef(null);
@@ -83,7 +83,8 @@ export default function LeafletMap({ hazards, center = INDIA_COAST_CENTER, zoom 
                     fillColor: severityColor(hazard.severity),
                     fillOpacity: 0.9,
                 });
-                marker.bindPopup(`<strong>${hazard.type.replace(/-/g, " ")}</strong><br/>
+                const safeType = hazard.type.replace(/[^a-z0-9-]/gi, "").replace(/-/g, " ");
+                marker.bindPopup(`<strong>${safeType}</strong><br/>
           ${hazard.severity} risk · ${hazard.reports} report(s)<br/>
           <small>${hazard.lat.toFixed(4)}, ${hazard.lng.toFixed(4)}</small>`);
                 if (onMarkerClick) {

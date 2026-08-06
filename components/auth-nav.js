@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getFirebaseAuth } from "@/lib/firebase-client";
+import { signOut } from "firebase/auth";
 
 export function AuthNav() {
     const router = useRouter();
@@ -20,6 +22,12 @@ export function AuthNav() {
 
     async function logout() {
         await fetch("/api/auth/logout", { method: "POST" });
+        try {
+            await signOut(getFirebaseAuth());
+        }
+        catch {
+            // The server session is still cleared when Firebase is not configured locally.
+        }
         setUser(null);
         router.push("/");
         router.refresh();

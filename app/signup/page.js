@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SiteFooter } from "@/components/site-footer";
 import { INDIA_REGIONS } from "@/lib/india-regions";
-import { firebaseActionUrl, getFirebaseAuth } from "@/lib/firebase-client";
+import { getFirebaseAuth } from "@/lib/firebase-client";
 
 const inputClass = "h-11 border-slate-600 bg-slate-700 text-white";
 
@@ -46,7 +46,7 @@ export default function SignupPage() {
             const profileData = await profileResponse.json();
             if (!profileResponse.ok)
                 throw new Error(profileData.error || "Unable to save your account profile.");
-            await sendEmailVerification(account.user, { url: firebaseActionUrl("/login") });
+            await sendEmailVerification(account.user);
             await signOut(getFirebaseAuth());
             setEmail(String(form.get("email")));
             setVerificationSent(true);

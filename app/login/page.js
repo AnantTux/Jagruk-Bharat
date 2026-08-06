@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SiteFooter } from "@/components/site-footer";
-import { firebaseActionUrl, getFirebaseAuth } from "@/lib/firebase-client";
+import { getFirebaseAuth } from "@/lib/firebase-client";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -56,7 +56,7 @@ export default function LoginPage() {
             const user = getFirebaseAuth().currentUser;
             if (!user)
                 throw new Error("Sign in again first, then request a new verification email.");
-            await sendEmailVerification(user, { url: firebaseActionUrl("/login") });
+            await sendEmailVerification(user);
             setError(`A new verification link was sent to ${unverifiedEmail}. Check inbox, spam, and Promotions.`);
         }
         catch (resendError) {

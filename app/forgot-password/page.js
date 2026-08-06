@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { firebaseActionUrl, getFirebaseAuth } from "@/lib/firebase-client";
+import { getFirebaseAuth } from "@/lib/firebase-client";
 
 export default function ForgotPasswordPage() {
     const [message, setMessage] = useState("");
@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
         setError("");
         try {
             const email = String(new FormData(event.currentTarget).get("email"));
-            await sendPasswordResetEmail(getFirebaseAuth(), email, { url: firebaseActionUrl("/login") });
+            await sendPasswordResetEmail(getFirebaseAuth(), email);
             setMessage("If this email has an account, Firebase has sent a password-reset link. Check your inbox and spam folder.");
         }
         catch (resetError) {

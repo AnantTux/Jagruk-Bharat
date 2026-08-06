@@ -29,7 +29,8 @@ export default function LoginPage() {
             const data = await response.json();
             if (!response.ok)
                 throw new Error(data.error || "Unable to sign in.");
-            router.push("/dashboard");
+            const nextPath = new URLSearchParams(window.location.search).get("next") === "/report" ? "/report" : "/dashboard";
+            router.push(nextPath);
             router.refresh();
         }
         catch (loginError) {

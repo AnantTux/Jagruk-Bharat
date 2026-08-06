@@ -10,6 +10,22 @@ function getHazardSocketUrl() {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     return `${protocol}//${window.location.host}/ws/hazards`;
 }
+
+function getVoterLocation() {
+    if (!navigator.geolocation)
+        return Promise.reject(new Error("Your browser does not support location access."));
+    return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition((position) => {
+            resolve({ lat: position.coords.latitude, lng: position.coords.longitude });
+        }, () => {
+            reject(new Error("Allow location access to vote on a nearby hazard."));
+        }, {
+            enableHighAccuracy: false,
+            maximumAge: 60000,
+            timeout: 15000,
+        });
+    });
+}
 export function useHazards() {
     const [hazards, setHazards] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -19,7 +35,10 @@ export function useHazards() {
     const mounted = useRef(true);
     const refresh = useCallback(async () => {
         try {
-            const res = await fetch("/api/hazards", { cache: "no-store" });
+            const res = await fetch("/api/hazards", {
+                cache: "no-store",
+                signal: AbortSignal.timeout(8000),
+            });
             if (!res.ok)
                 throw new Error("Failed to load hazards");
             const data = (await res.json());
@@ -31,7 +50,9 @@ export function useHazards() {
         }
         catch (e) {
             if (mounted.current) {
-                setError(e instanceof Error ? e.message : "Failed to load hazards");
+                setError(e?.name === "TimeoutError"
+                    ? "Hazard data took too long to load. Please refresh the page."
+                    : e instanceof Error ? e.message : "Failed to load hazards");
             }
         }
         finally {
@@ -173,10 +194,11 @@ export function useHazards() {
     }, [refresh]);
     const voteHazard = useCallback(async (id, direction) => {
         try {
+            const voterLocation = await getVoterLocation();
             const res = await fetch(`/api/hazards/${id}/vote`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ direction }),
+                body: JSON.stringify({ direction, voterLocation }),
             });
             const data = await res.json();
             if (!res.ok) {

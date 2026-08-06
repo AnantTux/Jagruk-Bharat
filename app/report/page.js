@@ -31,6 +31,7 @@ export default function ReportHazardPage() {
         contact: { name: "", email: "", phone: "", anonymous: false },
         emergency: false,
     });
+    const [authReady, setAuthReady] = useState(false);
     const totalSteps = 5;
     const progress = (currentStep / totalSteps) * 100;
     const nextStep = () => {
@@ -95,6 +96,25 @@ export default function ReportHazardPage() {
             photoPreviews.forEach((p) => URL.revokeObjectURL(p.url));
         };
     }, [photoPreviews]);
+    useEffect(() => {
+        let active = true;
+        fetch("/api/auth/session", { cache: "no-store" })
+            .then((response) => response.json())
+            .then((data) => {
+                if (!active)
+                    return;
+                if (!data.user) {
+                    router.replace("/login?next=/report");
+                    return;
+                }
+                setAuthReady(true);
+            })
+            .catch(() => {
+                if (active)
+                    router.replace("/login?next=/report");
+            });
+        return () => { active = false; };
+    }, [router]);
     const pickMarker = formData.location.lat && formData.location.lng
         ? { lat: Number(formData.location.lat), lng: Number(formData.location.lng) }
         : null;
@@ -149,6 +169,8 @@ export default function ReportHazardPage() {
                 return null;
         }
     };
+    if (!authReady)
+        return _jsx("div", { className: "min-h-screen bg-slate-900" });
     return (_jsxs("div", { className: "min-h-screen bg-slate-900", children: [_jsx("header", { className: "border-b border-slate-700 bg-slate-800/50 backdrop-blur-sm sticky top-0 z-50", children: _jsx("div", { className: "container mx-auto px-4 py-4", children: _jsxs("div", { className: "flex items-center justify-between", children: [_jsx(SiteBrand, { subtitle: "Report a hazard" }), _jsx("div", { className: "flex items-center gap-4", children: _jsxs(Badge, { className: "bg-slate-700 text-white border-slate-600", children: [_jsx(Clock, { className: "w-3 h-3 mr-1" }), "Step ", currentStep, " of ", totalSteps] }) })] }) }) }), _jsxs("div", { className: "container mx-auto px-4 py-8 max-w-4xl", children: [_jsxs("div", { className: "mb-8", children: [_jsxs("div", { className: "flex items-center justify-between mb-2", children: [_jsx("span", { className: "text-sm font-medium text-white", children: "Progress" }), _jsxs("span", { className: "text-sm text-slate-300", children: [Math.round(progress), "% complete"] })] }), _jsx(Progress, { value: progress, className: "h-2 bg-slate-700" })] }), submitError && (_jsx("p", { className: "mb-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-300", children: submitError })), _jsx("div", { className: "mb-8 bg-slate-800 border border-slate-700 rounded-lg", children: _jsx("div", { className: "p-8", children: renderStep() }) }), _jsxs("div", { className: "flex items-center justify-between", children: [_jsxs(Button, { variant: "outline", onClick: prevStep, disabled: currentStep === 1, className: "flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700", children: [_jsx(ArrowLeft, { className: "w-4 h-4" }), "Previous"] }), _jsx("div", { className: "flex gap-2", children: currentStep < totalSteps ? (_jsxs(Button, { onClick: nextStep, disabled: (currentStep === 1 && !formData.hazardType) ||
                                         (currentStep === 2 && !formData.severity) ||
                                         (currentStep === 3 && (!formData.location.lat || !formData.location.lng)), className: "flex items-center gap-2 bg-amber-400 text-black hover:bg-amber-500", children: ["Next", _jsx(ArrowRight, { className: "w-4 h-4" })] })) : (_jsxs(Button, { className: "flex items-center gap-2 bg-amber-400 text-black hover:bg-amber-500", disabled: submitting, onClick: () => void handleSubmit(), children: [_jsx(CheckCircle, { className: "w-4 h-4" }), submitting ? "Submitting…" : "Submit Report"] })) })] }), formData.emergency && (_jsx("div", { className: "mt-6 border border-red-500/30 bg-red-500/10 rounded-lg", children: _jsx("div", { className: "p-6", children: _jsxs("div", { className: "flex items-start gap-4", children: [_jsx(AlertTriangle, { className: "w-6 h-6 text-red-400 mt-1" }), _jsxs("div", { children: [_jsx("h3", { className: "font-semibold text-red-400 mb-2", children: "Emergency Situation Detected" }), _jsx("p", { className: "text-sm text-slate-300 mb-4", children: "If this is a life-threatening emergency, please contact emergency services immediately." }), _jsxs("div", { className: "flex gap-3", children: [_jsxs(Button, { className: "bg-red-500 text-white hover:bg-red-600", size: "sm", onClick: () => window.open("tel:112", "_self"), children: [_jsx(Phone, { className: "w-4 h-4 mr-2" }), "Call 112"] }), _jsxs(Button, { variant: "outline", size: "sm", className: "border-slate-600 text-white hover:bg-slate-700 bg-transparent", onClick: () => window.open("tel:1070", "_self"), children: [_jsx(Phone, { className: "w-4 h-4 mr-2" }), "Disaster Helpline 1070"] })] })] })] }) }) }))] }), _jsx(SiteFooter, {})] }));

@@ -32,15 +32,15 @@ describe("/api/hazards/[id]/vote", () => {
         const hazard = { id: "hazard-1", upvotes: 1, downvotes: 0 };
         voteHazard.mockResolvedValue({ hazard });
 
-        const response = await POST(requestWith({ direction: "up" }), context);
+        const response = await POST(requestWith({ direction: "up", voterLocation: { lat: 28.6139, lng: 77.209 } }), context);
 
         expect(response.status).toBe(200);
-        expect(voteHazard).toHaveBeenCalledWith("hazard-1", "user-1", "up");
+        expect(voteHazard).toHaveBeenCalledWith("hazard-1", "user-1", "up", { lat: 28.6139, lng: 77.209 });
         await expect(response.json()).resolves.toEqual({ hazard });
     });
 
     test("rejects an unsupported vote direction", async () => {
-        const response = await POST(requestWith({ direction: "sideways" }), context);
+        const response = await POST(requestWith({ direction: "sideways", voterLocation: { lat: 28.6139, lng: 77.209 } }), context);
 
         expect(response.status).toBe(400);
         expect(voteHazard).not.toHaveBeenCalled();
@@ -49,7 +49,7 @@ describe("/api/hazards/[id]/vote", () => {
     test("requires a verified signed-in user", async () => {
         getCurrentUser.mockResolvedValue(null);
 
-        const response = await POST(requestWith({ direction: "up" }), context);
+        const response = await POST(requestWith({ direction: "up", voterLocation: { lat: 28.6139, lng: 77.209 } }), context);
 
         expect(response.status).toBe(401);
         expect(voteHazard).not.toHaveBeenCalled();
@@ -58,7 +58,7 @@ describe("/api/hazards/[id]/vote", () => {
     test("rejects a second vote from the same user", async () => {
         voteHazard.mockResolvedValue({ reason: "already-voted" });
 
-        const response = await POST(requestWith({ direction: "up" }), context);
+        const response = await POST(requestWith({ direction: "up", voterLocation: { lat: 28.6139, lng: 77.209 } }), context);
 
         expect(response.status).toBe(409);
         await expect(response.json()).resolves.toEqual({ error: "You have already voted on this hazard." });
@@ -67,8 +67,23 @@ describe("/api/hazards/[id]/vote", () => {
     test("returns 404 when the hazard does not exist", async () => {
         voteHazard.mockResolvedValue({ reason: "not-found" });
 
-        const response = await POST(requestWith({ direction: "down" }), context);
+        const response = await POST(requestWith({ direction: "down", voterLocation: { lat: 28.6139, lng: 77.209 } }), context);
 
         expect(response.status).toBe(404);
+    });
+
+    test("requires a valid browser location before recording a vote", async () => {
+        const response = await POST(requestWith({ direction: "up" }), context);
+
+        expect(response.status).toBe(400);
+        expect(voteHazard).not.toHaveBeenCalled();
+    });
+
+    test("rejects a vote outside the nearby verification radius", async () => {
+        voteHazard.mockResolvedValue({ reason: "too-far" });
+
+        const response = await POST(requestWith({ direction: "up", voterLocation: { lat: 28.6139, lng: 77.209 } }), context);
+
+        expect(response.status).toBe(403);
     });
 });

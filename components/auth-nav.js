@@ -59,8 +59,8 @@ export function AuthNav({ light = false, showDashboard = true }) {
         <Button variant="ghost" className={text} asChild><Link href="/report">Report hazard</Link></Button>
         <Button variant="ghost" className={text} asChild><Link href="/analytics">Analytics</Link></Button>
         <span className={`text-sm ${light ? "text-blue-100" : "text-slate-700"}`}>Hi, {user.firstName}</span>
-        {showDashboard && <Button variant="outline" className={light ? "border-white/70 bg-white/10 text-white hover:bg-white/20" : "border-blue-600 text-blue-700 hover:bg-blue-50"} asChild><Link href="/dashboard">Dashboard</Link></Button>}
-        {user.role === "admin" && <Button variant="outline" className={light ? "border-white/70 text-white hover:bg-white/20" : "border-blue-700 text-blue-800 hover:bg-blue-50"} asChild><Link href="/admin">Admin</Link></Button>}
+        {showDashboard && <Button variant="outline" className={light ? "border-white/70 !bg-transparent text-white hover:!bg-white/20" : "border-blue-600 text-blue-700 hover:bg-blue-50"} asChild><Link href="/dashboard">Dashboard</Link></Button>}
+        {user.role === "admin" && <Button variant="outline" className={light ? "border-white/70 !bg-transparent text-white hover:!bg-white/20" : "border-blue-700 text-blue-800 hover:bg-blue-50"} asChild><Link href="/admin">Admin</Link></Button>}
         <Button variant="ghost" onClick={logout} className={text}>Log out</Button>
     </>;
 }

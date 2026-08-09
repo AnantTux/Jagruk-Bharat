@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createHazard, listHazards, publicHazard } from "@/lib/hazard-store";
-import { saveHazardPhotos } from "@/lib/save-hazard-photos";
 import { parseHazardFormData, validateHazardInput } from "@/lib/hazard-validation";
 import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/auth";
@@ -44,6 +43,9 @@ export async function POST(request) {
             const hazardId = randomUUID();
             let photoUrls = [];
             if (photoFiles.length > 0) {
+                // Sharp is only needed for a photo upload. Loading it at module
+                // start made read-only map requests fail on Vercel's Linux runtime.
+                const { saveHazardPhotos } = await import("@/lib/save-hazard-photos");
                 photoUrls = await saveHazardPhotos(photoFiles, hazardId);
             }
             const hazard = await createHazard({

@@ -19,6 +19,7 @@ export default function AdminPage() {
     const [flags, setFlags] = useState([]);
     const [message, setMessage] = useState("");
     const [busy, setBusy] = useState(false);
+    const [sampleDataVisible, setSampleDataVisible] = useState(true);
 
     const loadFlags = useCallback(async () => {
         const response = await fetch("/api/admin/moderation", { cache: "no-store" });
@@ -29,6 +30,12 @@ export default function AdminPage() {
         const data = await response.json();
         setFlags(data.flags ?? []);
     }, [router]);
+
+    const loadSampleDataSetting = useCallback(async () => {
+        const response = await fetch("/api/admin/settings/sample-data", { cache: "no-store" });
+        const data = await response.json();
+        if (response.ok) setSampleDataVisible(data.sampleDataVisible);
+    }, []);
 
     useEffect(() => {
         let active = true;
@@ -43,10 +50,25 @@ export default function AdminPage() {
                 }
                 setReady(true);
                 await loadFlags();
+                await loadSampleDataSetting();
             })
             .catch(() => router.replace("/login?next=/admin"));
         return () => { active = false; };
-    }, [loadFlags, router]);
+    }, [loadFlags, loadSampleDataSetting, router]);
+
+    async function toggleSampleData() {
+        setBusy(true);
+        setMessage("");
+        try {
+            const response = await fetch("/api/admin/settings/sample-data", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sampleDataVisible: !sampleDataVisible }) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error ?? "Could not update sample data visibility.");
+            setSampleDataVisible(data.sampleDataVisible);
+            setMessage(data.sampleDataVisible ? "Sample hazards are now visible on the public map and analytics." : "Sample hazards are now hidden from the public map and analytics.");
+        }
+        catch (error) { setMessage(error instanceof Error ? error.message : "Could not update sample data visibility."); }
+        finally { setBusy(false); }
+    }
 
     async function searchUsers(event) {
         event.preventDefault();
@@ -116,6 +138,7 @@ export default function AdminPage() {
             </header>
             {message && <p role="status" className="rounded-md border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-100">{message}</p>}
             <div className="grid gap-6 lg:grid-cols-2">
+                <Card className="border-slate-700 bg-slate-800"><CardHeader><CardTitle className="text-white">Sample data</CardTitle></CardHeader><CardContent className="space-y-3"><p className="text-sm text-slate-400">The 60 labelled sample hazards can be hidden without deleting them.</p><Button disabled={busy} onClick={() => void toggleSampleData()} className="bg-blue-600 text-white hover:bg-blue-500">{sampleDataVisible ? "Hide sample data" : "Show sample data"}</Button></CardContent></Card>
                 <Card className="border-slate-700 bg-slate-800"><CardHeader><CardTitle className="flex items-center gap-2 text-white"><Users className="h-5 w-5 text-amber-400" />User roles</CardTitle></CardHeader><CardContent className="space-y-4">
                     <form onSubmit={searchUsers} className="flex gap-2"><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name or email" className="border-slate-600 bg-slate-700 text-white" /><Button disabled={busy} type="submit" className="bg-amber-400 text-slate-900 hover:bg-amber-500"><Search className="mr-1 h-4 w-4" />Search</Button></form>
                     <div className="space-y-3">{users.map((user) => <div key={user.id} className="rounded-md border border-slate-700 bg-slate-900/60 p-3"><p className="font-medium">{user.firstName} {user.lastName}</p><p className="mb-2 text-sm text-slate-400">{user.email} · {user.region}</p><Select value={user.role} disabled={busy} onValueChange={(role) => void changeRole(user.id, role)}><SelectTrigger className="border-slate-600 bg-slate-700 text-white"><SelectValue /></SelectTrigger><SelectContent>{roles.map((role) => <SelectItem key={role} value={role}>{role}</SelectItem>)}</SelectContent></Select></div>)}</div>

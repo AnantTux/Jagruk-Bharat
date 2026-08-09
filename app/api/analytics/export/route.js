@@ -1,6 +1,7 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import { Hazard } from "@/lib/models/hazard";
 import { publicHazard } from "@/lib/hazard-store";
+import { getSampleDataVisible, hideSampleDataFilter } from "@/lib/sample-data-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,8 @@ const escapeCsv = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
 export async function GET() {
     try {
         await connectToDatabase();
-        const hazards = await Hazard.find({ status: "active", moderationStatus: { $in: ["published", null] }, expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 }).lean();
+        const sampleDataVisible = await getSampleDataVisible();
+        const hazards = await Hazard.find({ status: "active", moderationStatus: { $in: ["published", null] }, expiresAt: { $gt: new Date() }, ...hideSampleDataFilter(sampleDataVisible) }).sort({ createdAt: -1 }).lean();
         const rows = [["id", "title", "type", "severity", "emergency", "verification", "upvotes", "latitude_approx", "longitude_approx", "created_at"]];
         for (const hazard of hazards) {
             const safe = publicHazard(hazard);

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Hazard } from "@/lib/models/hazard";
 import { publicHazard } from "@/lib/hazard-store";
+import { getSampleDataVisible, hideSampleDataFilter } from "@/lib/sample-data-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +15,15 @@ const visibleHazards = {
 export async function GET() {
     try {
         await connectToDatabase();
+        const sampleDataVisible = await getSampleDataVisible();
+        const filter = { ...visibleHazards, ...hideSampleDataFilter(sampleDataVisible) };
         const [summary, byType, recent] = await Promise.all([
             Hazard.aggregate([
-                { $match: visibleHazards },
+                { $match: filter },
                 { $group: { _id: null, active: { $sum: 1 }, emergency: { $sum: { $cond: ["$emergency", 1, 0] } }, highSeverity: { $sum: { $cond: [{ $eq: ["$severity", "high"] }, 1, 0] } }, adminApproved: { $sum: { $cond: [{ $eq: ["$verificationStatus", "admin-approved"] }, 1, 0] } }, communityVotes: { $sum: "$upvotes" } } },
             ]),
-            Hazard.aggregate([{ $match: visibleHazards }, { $group: { _id: "$type", count: { $sum: 1 }, upvotes: { $sum: "$upvotes" } } }, { $sort: { count: -1, _id: 1 } }]),
-            Hazard.find(visibleHazards).sort({ createdAt: -1 }).limit(10).lean(),
+            Hazard.aggregate([{ $match: filter }, { $group: { _id: "$type", count: { $sum: 1 }, upvotes: { $sum: "$upvotes" } } }, { $sort: { count: -1, _id: 1 } }]),
+            Hazard.find(filter).sort({ createdAt: -1 }).limit(10).lean(),
         ]);
         return NextResponse.json({ summary: summary[0] ?? { active: 0, emergency: 0, highSeverity: 0, adminApproved: 0, communityVotes: 0 }, byType, recent: recent.map(publicHazard) });
     }

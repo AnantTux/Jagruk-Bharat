@@ -1,6 +1,6 @@
 "use client";
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DEFAULT_ZOOM, INDIA_CENTER, severityColor } from "@/lib/hazard-utils";
 import { cn } from "@/lib/utils";
 export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFAULT_ZOOM, className = "h-[450px] w-full rounded-xl", selectedId, showHeatMap = false, onMarkerClick, onMapClick, pickMode = false, pickMarker, }) {
@@ -10,6 +10,7 @@ export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFA
     const heatLayerRef = useRef(null);
     const pickMarkerRef = useRef(null);
     const onMapClickRef = useRef(onMapClick);
+    const [mapVersion, setMapVersion] = useState(0);
     useEffect(() => {
         onMapClickRef.current = onMapClick;
     }, [onMapClick]);
@@ -36,6 +37,9 @@ export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFA
             mapRef.current = map;
             layerGroupRef.current = layerGroup;
             heatLayerRef.current = heatLayer;
+            // Marker effects can run before Leaflet finishes loading. Updating this
+            // value causes them to run once more after the map is ready.
+            setMapVersion((current) => current + 1);
             map.on("click", (e) => {
                 onMapClickRef.current?.(e.latlng.lat, e.latlng.lng);
             });
@@ -77,7 +81,7 @@ export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFA
         if (!map)
             return;
         map.setView(center, zoom, { animate: true });
-    }, [center, zoom]);
+    }, [center, zoom, mapVersion]);
     useEffect(() => {
         const map = mapRef.current;
         const layerGroup = layerGroupRef.current;
@@ -109,7 +113,7 @@ export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFA
                 marker.addTo(layerGroup);
             });
         });
-    }, [hazards, selectedId, onMarkerClick]);
+    }, [hazards, selectedId, onMarkerClick, mapVersion]);
     useEffect(() => {
         const heatLayer = heatLayerRef.current;
         if (!heatLayer)
@@ -129,7 +133,7 @@ export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFA
                 }).addTo(heatLayer);
             });
         });
-    }, [hazards, showHeatMap]);
+    }, [hazards, showHeatMap, mapVersion]);
     useEffect(() => {
         const map = mapRef.current;
         if (!map)

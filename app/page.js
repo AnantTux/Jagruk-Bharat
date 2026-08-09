@@ -28,13 +28,14 @@ export default function Page() {
 
 function SiteHeader() {
     return (
-        <header className="relative z-50 border-b border-blue-800 bg-[#1d68b8] text-white">
+        <header className="relative z-50 border-b border-blue-900 bg-[#1264b9] text-white">
             <div className="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-3 lg:px-8">
                 <SiteBrand light />
                 <div className="hidden items-center gap-4 md:flex">
                     <AuthNav light />
                 </div>
             </div>
+            <div className="h-2 bg-[#78be4c]" />
         </header>
     );
 }

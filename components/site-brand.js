@@ -4,7 +4,7 @@ import { SITE } from "@/lib/site";
 
 export function SiteBrand({ href = "/", subtitle, light = false }) {
     return (
-        <Link href={href} className="flex items-center gap-3">
+        <Link href={href} aria-label="Jagruk Bharat home" className="flex cursor-pointer items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
                 <ShieldCheck className="h-6 w-6 text-white" />
             </div>

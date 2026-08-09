@@ -14,9 +14,15 @@ function GuidelinesMenu({ light }) {
             <summary className={`flex cursor-pointer list-none items-center gap-1 rounded-md px-3 py-2 text-sm font-medium ${light ? "text-white hover:bg-white/15" : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"}`}>
                 <BookOpen className="h-4 w-4" /> Guidelines <ChevronDown className="h-3.5 w-3.5" />
             </summary>
-            <div className="absolute right-0 z-[70] mt-2 w-72 rounded-lg border border-blue-200 bg-white p-2 shadow-lg">
-                <Link href="/guidelines" className="block rounded-md px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50">Stay prepared</Link>
-                <p className="px-3 pb-2 text-xs leading-relaxed text-slate-600">Safety advice, emergency numbers, and responsible reporting guidance.</p>
+            <div className="absolute right-0 z-[70] mt-2 w-80 rounded-lg border border-blue-200 bg-white p-2 shadow-lg">
+                <Link href="/guidelines" className="block rounded-md px-3 py-2.5 hover:bg-blue-50">
+                    <span className="block text-sm font-semibold text-slate-900">Hazard safety guidelines</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-600">Public safety advice, emergency protocols, and responsible reporting.</span>
+                </Link>
+                <Link href="/guidelines/workflow" className="mt-1 block rounded-md px-3 py-2.5 hover:bg-blue-50">
+                    <span className="block text-sm font-semibold text-slate-900">Application walkthrough &amp; workflow</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-600">How to report, verify, and understand the admin approval process.</span>
+                </Link>
             </div>
         </details>
     );

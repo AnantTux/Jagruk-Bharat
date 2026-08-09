@@ -13,8 +13,7 @@ import { formatLatestAlert } from "@/lib/hazard-utils";
 export default function Page() {
     const { hazards, loading, error } = useHazards();
     return (
-        <div className="min-h-screen overflow-hidden bg-slate-950 font-sans text-white">
-            <BackgroundGlow />
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
             <SiteHeader />
             <EmergencyBanner />
             <LatestAlert hazards={hazards} />
@@ -27,13 +26,9 @@ export default function Page() {
     );
 }
 
-function BackgroundGlow() {
-    return <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(37,99,235,0.28),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(14,165,233,0.16),transparent_20%)]" />;
-}
-
 function SiteHeader() {
     return (
-        <header className="relative border-b border-slate-800 bg-slate-950/90 text-white backdrop-blur-xl">
+        <header className="relative z-50 border-b border-blue-100 bg-white text-slate-900">
             <div className="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-3 lg:px-8">
                 <SiteBrand />
                 <div className="hidden items-center gap-4 md:flex">
@@ -56,5 +51,5 @@ function EmergencyBanner() {
 }
 
 function LatestAlert({ hazards }) {
-    return <div className="relative border-b border-blue-300/30 bg-blue-100 text-blue-950"><div className="mx-auto flex max-w-[1600px] items-center gap-2 px-5 py-2 text-sm font-bold lg:px-8"><AlertTriangle className="h-4 w-4 shrink-0" /><span className="line-clamp-2">{formatLatestAlert(hazards)}</span></div></div>;
+    return <div className="relative border-b border-blue-200 bg-blue-50 text-blue-950"><div className="mx-auto flex max-w-[1600px] items-center gap-2 px-5 py-2 text-sm font-bold lg:px-8"><AlertTriangle className="h-4 w-4 shrink-0" /><span className="line-clamp-2">{formatLatestAlert(hazards)}</span></div></div>;
 }

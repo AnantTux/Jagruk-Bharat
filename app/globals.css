@@ -123,3 +123,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Keep the pre-existing multi-step report form fast, but visually aligned with
+   the lightweight white-and-blue map pages. */
+body.report-page-active { background: #f8fafc; }
+body.report-page-active .bg-slate-900, body.report-page-active .bg-slate-800, body.report-page-active .bg-slate-800\/50 { background-color: #ffffff !important; }
+body.report-page-active .bg-slate-700 { background-color: #e2e8f0 !important; }
+body.report-page-active .border-slate-700, body.report-page-active .border-slate-600 { border-color: #bfdbfe !important; }
+body.report-page-active .text-white { color: #0f172a !important; }
+body.report-page-active .text-slate-300, body.report-page-active .text-slate-400 { color: #475569 !important; }
+body.report-page-active .bg-amber-400 { background-color: #2563eb !important; }
+body.report-page-active .text-amber-400, body.report-page-active .text-amber-300 { color: #2563eb !important; }
+body.report-page-active .ring-amber-400 { --tw-ring-color: #2563eb !important; }
+.analytics-page .bg-slate-900\/70, .analytics-page .bg-slate-950\/90 { background-color: #ffffff !important; }
+.analytics-page .border-blue-900 { border-color: #bfdbfe !important; }

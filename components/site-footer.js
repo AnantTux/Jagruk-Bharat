@@ -1,20 +1,6 @@
-import { ShieldCheck } from "lucide-react";
+import { Github, Linkedin, Mail, ShieldCheck } from "lucide-react";
 import { SITE } from "@/lib/site";
 
 export function SiteFooter({ compact = false }) {
-    return (
-        <footer className="border-t border-blue-950/70 bg-slate-950 text-slate-400">
-            <div className="container mx-auto px-4 py-8">
-                <div className="max-w-xl space-y-3">
-                    <div className="flex items-center gap-2">
-                        <ShieldCheck className="h-5 w-5 text-blue-400" />
-                        <span className="text-lg font-bold text-white">{SITE.name}</span>
-                        <span className="text-sm text-blue-300">· {SITE.tagline}</span>
-                    </div>
-                    {!compact && <p className="text-sm leading-relaxed text-slate-400">{SITE.about}</p>}
-                    <p className="text-xs text-slate-500">© {new Date().getFullYear()} {SITE.name}. Built by Anant.</p>
-                </div>
-            </div>
-        </footer>
-    );
+    return <footer className="border-t border-blue-100 bg-white text-slate-600"><div className="container mx-auto flex flex-col gap-6 px-4 py-8 md:flex-row md:items-start md:justify-between"><div className="max-w-xl space-y-3"><div className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-blue-600" /><span className="text-lg font-bold text-slate-900">{SITE.name}</span><span className="text-sm text-blue-600">· {SITE.tagline}</span></div>{!compact && <p className="text-sm leading-relaxed">{SITE.about}</p>}<p className="text-xs text-slate-500">© {new Date().getFullYear()} {SITE.name}. Built by Anant.</p></div><div className="space-y-3 md:text-right"><p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Connect</p><div className="flex flex-wrap gap-4 text-sm md:justify-end"><a href={`mailto:${SITE.email}`} className="inline-flex items-center gap-2 hover:text-blue-700"><Mail className="h-4 w-4" />Email</a><a href={SITE.linkedIn} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-blue-700"><Linkedin className="h-4 w-4" />LinkedIn</a><a href={SITE.github} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-blue-700"><Github className="h-4 w-4" />GitHub</a></div></div></div></footer>;
 }

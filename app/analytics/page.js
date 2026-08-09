@@ -21,7 +21,7 @@ export default function HazardAnalytics() {
     useEffect(() => { const timer = setTimeout(() => { void load(); }, 0); return () => clearTimeout(timer); }, []);
     const summary = data?.summary ?? blank;
     const largestType = Math.max(1, ...(data?.byType?.map((item) => item.count) ?? [1]));
-    return <main className="min-h-screen bg-slate-950 text-white">
+    return <main className="analytics-page min-h-screen bg-white text-slate-900">
         <header className="border-b border-blue-900 bg-slate-950/90"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-5"><div><p className="text-sm font-bold uppercase tracking-[0.16em] text-blue-300">Jagruk Bharat</p><h1 className="text-2xl font-black">Hazard analytics</h1><p className="mt-1 text-sm text-slate-400">Live figures from published public hazard reports.</p></div><div className="flex gap-2"><Button variant="outline" className="border-blue-700 bg-blue-950/50 text-white hover:bg-blue-900" asChild><a href="/api/analytics/export"><Download className="mr-2 h-4 w-4" /> Export CSV</a></Button><Button onClick={() => void load()} disabled={loading} className="bg-blue-600 text-white hover:bg-blue-500"><RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button></div></div></header>
         <div className="mx-auto max-w-6xl px-5 py-8">
             {error && <div role="alert" className="mb-6 rounded-lg border border-red-400/50 bg-red-950/40 p-4 text-red-100">{error} <Link href="/dashboard" className="ml-2 underline">Open the map</Link></div>}

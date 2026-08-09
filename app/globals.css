@@ -137,3 +137,11 @@ body.report-page-active .text-amber-400, body.report-page-active .text-amber-300
 body.report-page-active .ring-amber-400 { --tw-ring-color: #2563eb !important; }
 .analytics-page .bg-slate-900\/70, .analytics-page .bg-slate-950\/90 { background-color: #ffffff !important; }
 .analytics-page .border-blue-900 { border-color: #bfdbfe !important; }
+body.auth-page-active { background: #f8fafc; }
+body.auth-page-active .bg-slate-900, body.auth-page-active .bg-slate-800, body.auth-page-active .bg-slate-800\/90 { background-color: #ffffff !important; }
+body.auth-page-active .bg-slate-700 { background-color: #ffffff !important; }
+body.auth-page-active .border-slate-700, body.auth-page-active .border-slate-600 { border-color: #bfdbfe !important; }
+body.auth-page-active .text-white { color: #0f172a !important; }
+body.auth-page-active .text-slate-300, body.auth-page-active .text-slate-400 { color: #475569 !important; }
+body.auth-page-active .bg-amber-400 { background-color: #2563eb !important; }
+body.auth-page-active .text-amber-400, body.auth-page-active .text-amber-300 { color: #2563eb !important; }

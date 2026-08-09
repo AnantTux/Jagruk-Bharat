@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, MailCheck, ShieldCheck, UserPlus } from "lucide-react";
@@ -21,6 +21,7 @@ export default function SignupPage() {
     const [email, setEmail] = useState("");
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
+    useEffect(() => { document.body.classList.add("auth-page-active"); return () => document.body.classList.remove("auth-page-active"); }, []);
 
     async function createAccount(event) {
         event.preventDefault();

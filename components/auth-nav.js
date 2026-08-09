@@ -47,6 +47,7 @@ export function AuthNav() {
     if (user === undefined) return <div className="h-9 w-36 animate-pulse rounded-md bg-blue-50" />;
     if (!user) return <>
         <GuidelinesMenu />
+        <Button variant="ghost" className="text-slate-700 hover:bg-blue-50 hover:text-blue-800" asChild><Link href="/dashboard">Dashboard</Link></Button>
         <Button variant="ghost" className="text-slate-700 hover:bg-blue-50 hover:text-blue-800" asChild><Link href="/login">Sign in</Link></Button>
         <Button className="bg-blue-600 font-bold text-white hover:bg-blue-500" asChild><Link href="/signup">Join</Link></Button>
     </>;

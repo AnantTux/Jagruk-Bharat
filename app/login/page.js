@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Shield, ShieldCheck } from "lucide-react";
@@ -18,6 +18,7 @@ export default function LoginPage() {
     const [resending, setResending] = useState(false);
     const [unverifiedEmail, setUnverifiedEmail] = useState("");
     const [error, setError] = useState("");
+    useEffect(() => { document.body.classList.add("auth-page-active"); return () => document.body.classList.remove("auth-page-active"); }, []);
 
     async function handleSubmit(event) {
         event.preventDefault();

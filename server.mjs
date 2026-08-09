@@ -3,7 +3,9 @@ import next from "next";
 import { WebSocket, WebSocketServer } from "ws";
 
 const development = process.env.NODE_ENV !== "production";
-const hostname = process.env.HOSTNAME || (development ? "localhost" : "0.0.0.0");
+// Do not bind production servers to the machine's HOSTNAME: CI runners and containers
+// commonly expose a hostname that is not reachable through localhost.
+const hostname = process.env.HOST || (development ? "localhost" : "0.0.0.0");
 const portFlagIndex = process.argv.findIndex((argument) => argument === "--port");
 const requestedPort = portFlagIndex >= 0 ? process.argv[portFlagIndex + 1] : undefined;
 const port = Number(process.env.PORT || requestedPort || 3000);

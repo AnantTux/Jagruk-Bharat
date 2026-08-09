@@ -41,6 +41,12 @@ jobs:
     name: Report-flow browser test
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/ananttatt-ci
+      NEXT_PUBLIC_FIREBASE_API_KEY: e2e-test-api-key
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: e2e-test.firebaseapp.com
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: e2e-test-project
+      NEXT_PUBLIC_FIREBASE_APP_ID: 1:123456789:web:e2etest
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -55,6 +61,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
+      - name: Build production test server
+        run: pnpm build
       - name: Run report-flow test
         run: pnpm test:e2e
       - name: Upload Playwright report

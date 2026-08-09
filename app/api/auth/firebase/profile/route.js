@@ -27,7 +27,8 @@ export async function POST(request) {
                 firebaseUid: decoded.uid,
                 email: decoded.email.toLowerCase(),
                 firstName, lastName, region,
-                role: text(body.role, 50) || "citizen",
+                // Public profile completion must never grant privileges.
+                role: "citizen",
                 notificationsEnabled: Boolean(body.notificationsEnabled),
             });
         }

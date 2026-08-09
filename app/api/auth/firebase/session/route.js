@@ -33,7 +33,7 @@ export async function POST(request) {
             const lastName = text(body.lastName, 80);
             const region = text(body.region, 100);
             if (!firstName || !lastName || !region)
-                return NextResponse.json({ error: "Your account profile is incomplete. Please sign up again." }, { status: 400 });
+                return NextResponse.json({ error: "Your account profile is incomplete.", requiresProfile: true }, { status: 409 });
             user = await User.create({
                 firebaseUid: decoded.uid,
                 email: decoded.email.toLowerCase(),

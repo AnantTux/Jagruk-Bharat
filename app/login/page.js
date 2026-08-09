@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Shield, ShieldCheck } from "lucide-react";
-import { sendEmailVerification, signInWithEmailAndPassword } from "firebase/auth";
+import { GoogleAuthProvider, sendEmailVerification, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,64 +13,12 @@ import { SiteFooter } from "@/components/site-footer";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 
 export default function LoginPage() {
-    const router = useRouter();
-    const [submitting, setSubmitting] = useState(false);
-    const [resending, setResending] = useState(false);
-    const [unverifiedEmail, setUnverifiedEmail] = useState("");
-    const [error, setError] = useState("");
+    const router = useRouter(); const [submitting, setSubmitting] = useState(false); const [resending, setResending] = useState(false); const [unverifiedEmail, setUnverifiedEmail] = useState(""); const [error, setError] = useState("");
     useEffect(() => { document.body.classList.add("auth-page-active"); return () => document.body.classList.remove("auth-page-active"); }, []);
-
-    async function handleSubmit(event) {
-        event.preventDefault();
-        setSubmitting(true);
-        setError("");
-        setUnverifiedEmail("");
-        const form = new FormData(event.currentTarget);
-        try {
-            const credentials = await signInWithEmailAndPassword(getFirebaseAuth(), String(form.get("email")), String(form.get("password")));
-            await credentials.user.reload();
-            if (!credentials.user.emailVerified) {
-                setUnverifiedEmail(credentials.user.email || String(form.get("email")));
-                throw new Error("Verify your email first. Check your inbox and spam folder, then sign in again.");
-            }
-            const idToken = await credentials.user.getIdToken(true);
-            const response = await fetch("/api/auth/firebase/session", {
-                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }),
-            });
-            const data = await response.json();
-            if (!response.ok)
-                throw new Error(data.error || "Unable to start your session.");
-            const nextPath = new URLSearchParams(window.location.search).get("next") === "/report" ? "/report" : "/dashboard";
-            router.push(nextPath);
-            router.refresh();
-        }
-        catch (loginError) {
-            setError(loginError instanceof Error ? loginError.message : "Unable to sign in.");
-        }
-        finally { setSubmitting(false); }
-    }
-
-    async function resendVerification() {
-        setResending(true);
-        setError("");
-        try {
-            const user = getFirebaseAuth().currentUser;
-            if (!user)
-                throw new Error("Sign in again first, then request a new verification email.");
-            await sendEmailVerification(user);
-            setError(`A new verification link was sent to ${unverifiedEmail}. Check inbox, spam, and Promotions.`);
-        }
-        catch (resendError) {
-            setError(resendError instanceof Error ? resendError.message.replace("Firebase: ", "") : "Unable to resend the verification email.");
-        }
-        finally { setResending(false); }
-    }
-
-    return <div className="flex min-h-screen flex-col bg-slate-900"><main className="flex flex-1 items-center justify-center p-4"><div className="w-full max-w-md">
-        <Link href="/" className="mb-6 inline-flex items-center text-sm text-slate-400 hover:text-white"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
-        <Card className="border-slate-700 bg-slate-800/90 shadow-lg"><CardHeader className="text-center"><div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400"><ShieldCheck className="h-7 w-7 text-slate-800" /></div><CardTitle className="text-2xl text-white">Welcome Back</CardTitle><CardDescription className="text-slate-300">Sign in with your verified Jagruk Bharat account.</CardDescription></CardHeader><CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">{error && <p role="alert" className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}<div className="space-y-2"><Label htmlFor="email" className="text-white">Email Address</Label><Input id="email" name="email" type="email" autoComplete="email" required className="h-11 border-slate-600 bg-slate-700 text-white" /></div><div className="space-y-2"><div className="flex justify-between"><Label htmlFor="password" className="text-white">Password</Label><Link href="/forgot-password" className="text-sm text-amber-400 hover:text-amber-300">Forgot password?</Link></div><Input id="password" name="password" type="password" autoComplete="current-password" required className="h-11 border-slate-600 bg-slate-700 text-white" /></div><Button disabled={submitting} className="h-11 w-full bg-amber-400 text-slate-900 hover:bg-amber-500"><Shield className="mr-2 h-4 w-4" /> {submitting ? "Signing in…" : "Sign In"}</Button></form>
-            {unverifiedEmail && <Button type="button" variant="outline" disabled={resending} onClick={resendVerification} className="mt-3 w-full border-amber-400/60 text-amber-300 hover:bg-amber-400/10 hover:text-amber-200">{resending ? "Sending verification email…" : "Resend verification email"}</Button>}
-            <p className="mt-6 text-center text-sm text-slate-400">Don&apos;t have an account? <Link href="/signup" className="font-medium text-amber-400">Sign up here</Link></p>
-        </CardContent></Card></div></main><SiteFooter compact /></div>;
+    const nextPath = () => new URLSearchParams(window.location.search).get("next") === "/report" ? "/report" : "/dashboard";
+    async function exchange(user) { const response = await fetch("/api/auth/firebase/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken: await user.getIdToken(true) }) }); const data = await response.json(); if (data.requiresProfile) { router.push(`/complete-profile?next=${encodeURIComponent(nextPath())}`); return; } if (!response.ok) throw new Error(data.error || "Unable to start your session."); router.push(nextPath()); router.refresh(); }
+    async function handleSubmit(event) { event.preventDefault(); setSubmitting(true); setError(""); setUnverifiedEmail(""); try { const form = new FormData(event.currentTarget); const credentials = await signInWithEmailAndPassword(getFirebaseAuth(), String(form.get("email")), String(form.get("password"))); await credentials.user.reload(); if (!credentials.user.emailVerified) { setUnverifiedEmail(credentials.user.email || String(form.get("email"))); throw new Error("Verify your email first, or use Google sign-in."); } await exchange(credentials.user); } catch (loginError) { setError(loginError instanceof Error ? loginError.message : "Unable to sign in."); } finally { setSubmitting(false); } }
+    async function googleSignIn() { setSubmitting(true); setError(""); try { const provider = new GoogleAuthProvider(); provider.setCustomParameters({ prompt: "select_account" }); const result = await signInWithPopup(getFirebaseAuth(), provider); await exchange(result.user); } catch (googleError) { setError(googleError instanceof Error ? googleError.message.replace("Firebase: ", "") : "Google sign-in failed."); } finally { setSubmitting(false); } }
+    async function resendVerification() { setResending(true); try { const user = getFirebaseAuth().currentUser; if (!user) throw new Error("Sign in again first."); await sendEmailVerification(user); setError(`A new verification link was sent to ${unverifiedEmail}.`); } catch (e) { setError(e instanceof Error ? e.message : "Unable to resend verification."); } finally { setResending(false); } }
+    return <div className="flex min-h-screen flex-col bg-slate-50"><main className="flex flex-1 items-center justify-center p-4"><div className="w-full max-w-md"><Link href="/" className="mb-6 inline-flex items-center text-sm text-blue-700"><ArrowLeft className="mr-2 h-4 w-4" />Back to home</Link><Card className="border-blue-200 bg-white shadow-sm"><CardHeader className="text-center"><div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600"><ShieldCheck className="h-7 w-7 text-white" /></div><CardTitle className="text-2xl text-slate-900">Welcome back</CardTitle><CardDescription>Sign in with your account, or continue securely with Google.</CardDescription></CardHeader><CardContent className="space-y-4">{error && <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}<Button type="button" disabled={submitting} onClick={() => void googleSignIn()} variant="outline" className="h-11 w-full border-blue-300 bg-white text-slate-800 hover:bg-blue-50"><span className="mr-2 font-bold text-blue-600">G</span>Continue with Google</Button><div className="flex items-center gap-3 text-xs text-slate-500"><span className="h-px flex-1 bg-blue-100" />or email<span className="h-px flex-1 bg-blue-100" /></div><form onSubmit={handleSubmit} className="space-y-4"><div className="space-y-2"><Label htmlFor="email">Email address</Label><Input id="email" name="email" type="email" autoComplete="email" required /></div><div className="space-y-2"><div className="flex justify-between"><Label htmlFor="password">Password</Label><Link href="/forgot-password" className="text-sm text-blue-700">Forgot password?</Link></div><Input id="password" name="password" type="password" autoComplete="current-password" required /></div><Button disabled={submitting} className="h-11 w-full bg-blue-600 text-white hover:bg-blue-500"><Shield className="mr-2 h-4 w-4" />{submitting ? "Signing in…" : "Sign in"}</Button></form>{unverifiedEmail && <Button type="button" variant="outline" disabled={resending} onClick={() => void resendVerification()} className="w-full border-blue-300 text-blue-700">{resending ? "Sending…" : "Resend verification email"}</Button>}<p className="text-center text-sm text-slate-600">Don&apos;t have an account? <Link href="/signup" className="font-medium text-blue-700">Sign up here</Link></p></CardContent></Card></div></main><SiteFooter compact /></div>;
 }

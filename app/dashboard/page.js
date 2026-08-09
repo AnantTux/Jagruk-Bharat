@@ -63,7 +63,7 @@ export default function MapDashboard() {
     }, [voteHazard]);
 
     return <main className="min-h-screen bg-[#edf1f2] text-slate-900">
-        <header className="border-b border-blue-900 bg-[#1264b9] text-white">
+        <header className="bg-[#1264b9] text-white">
             <div className="flex min-h-[88px] flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
                 <SiteBrand light />
                 <nav aria-label="Primary" className="flex items-center gap-2"><AuthNav light showDashboard={false} /></nav>

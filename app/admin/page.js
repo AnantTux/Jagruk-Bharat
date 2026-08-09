@@ -121,7 +121,7 @@ export default function AdminPage() {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-900">
-            <header className="border-b border-blue-900 bg-[#1264b9] text-white">
+            <header className="bg-[#1264b9] text-white">
                 <div className="mx-auto flex min-h-[88px] max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
                     <SiteBrand light subtitle="Administration" />
                     <nav aria-label="Primary" className="flex items-center gap-2"><AuthNav light /></nav>

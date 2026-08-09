@@ -27,7 +27,8 @@
     "test:e2e": "playwright test",
     "check": "pnpm lint && pnpm test && pnpm build",
     "user:suspend": "node --env-file=.env.local scripts/suspend-user.js",
-    "user:role": "node --env-file=.env.local scripts/set-user-role.js"
+    "user:role": "node --env-file=.env.local scripts/set-user-role.js",
+    "seed:demo": "node --env-file=.env.local scripts/seed-demo-hazards.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

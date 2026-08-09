@@ -40,7 +40,7 @@ export function useHazards() {
                 signal: AbortSignal.timeout(8000),
             });
             if (!res.ok)
-                throw new Error("Failed to load hazards");
+                throw new Error("Hazard data is temporarily unavailable. Please try again shortly.");
             const data = (await res.json());
             if (mounted.current) {
                 setHazards(data.hazards);
@@ -52,7 +52,7 @@ export function useHazards() {
             if (mounted.current) {
                 setError(e?.name === "TimeoutError"
                     ? "Hazard data took too long to load. Please refresh the page."
-                    : e instanceof Error ? e.message : "Failed to load hazards");
+                    : e instanceof Error ? e.message : "Hazard data is temporarily unavailable.");
             }
         }
         finally {

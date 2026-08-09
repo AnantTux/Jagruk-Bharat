@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Activity, AlertTriangle, ArrowUpRight, Clock3, ShieldCheck } from "lucide-react";
+import { Activity, AlertTriangle, Clock3, ShieldCheck } from "lucide-react";
 import { HazardMap } from "@/components/HazardMap";
 
 export function HazardMonitoring({ hazards, loading, error }) {
@@ -18,9 +17,6 @@ export function HazardMonitoring({ hazards, loading, error }) {
                             </div>
                             <p className="mt-1 text-sm text-slate-400">Community reports from across India refresh automatically every few seconds.</p>
                         </div>
-                        <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm font-bold text-amber-300 transition-colors hover:text-amber-200">
-                            Open monitoring dashboard <ArrowUpRight className="h-4 w-4" />
-                        </Link>
                     </div>
                     {error && <p className="mb-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>}
                     {loading ? <MapLoading /> : <HazardMap hazards={hazards} className="h-[530px] w-full rounded-2xl z-0" />}

@@ -4,7 +4,6 @@ import { AlertTriangle, Phone } from "lucide-react";
 import { AuthNav } from "@/components/auth-nav";
 import { HazardMonitoring } from "@/components/hazard-monitoring";
 import { HomeHero } from "@/components/home-hero";
-import { SafetyBriefing } from "@/components/safety-briefing";
 import { SiteBrand } from "@/components/site-brand";
 import { SiteFooter } from "@/components/site-footer";
 import { useHazards } from "@/hooks/use-hazards";
@@ -22,7 +21,6 @@ export default function Page() {
             <main className="relative">
                 <HomeHero />
                 <HazardMonitoring hazards={hazards} loading={loading} error={error} />
-                <section className="mx-auto max-w-[1600px] px-5 py-8 lg:px-8 lg:py-10"><SafetyBriefing /></section>
             </main>
             <SiteFooter />
         </div>
@@ -30,7 +28,7 @@ export default function Page() {
 }
 
 function BackgroundGlow() {
-    return <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(14,116,144,0.2),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(245,158,11,0.1),transparent_20%)]" />;
+    return <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(37,99,235,0.28),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(14,165,233,0.16),transparent_20%)]" />;
 }
 
 function SiteHeader() {
@@ -58,5 +56,5 @@ function EmergencyBanner() {
 }
 
 function LatestAlert({ hazards }) {
-    return <div className="relative border-b border-amber-300/30 bg-amber-400 text-slate-950"><div className="mx-auto flex max-w-[1600px] items-center gap-2 px-5 py-2 text-sm font-bold lg:px-8"><AlertTriangle className="h-4 w-4 shrink-0" /><span className="line-clamp-2">{formatLatestAlert(hazards)}</span></div></div>;
+    return <div className="relative border-b border-blue-300/30 bg-blue-100 text-blue-950"><div className="mx-auto flex max-w-[1600px] items-center gap-2 px-5 py-2 text-sm font-bold lg:px-8"><AlertTriangle className="h-4 w-4 shrink-0" /><span className="line-clamp-2">{formatLatestAlert(hazards)}</span></div></div>;
 }

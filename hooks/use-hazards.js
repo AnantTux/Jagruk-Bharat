@@ -37,7 +37,9 @@ export function useHazards() {
         try {
             const res = await fetch("/api/hazards", {
                 cache: "no-store",
-                signal: AbortSignal.timeout(8000),
+                // A serverless MongoDB connection can take longer than a normal request
+                // immediately after deployment or a cold start.
+                signal: AbortSignal.timeout(25000),
             });
             if (!res.ok)
                 throw new Error("Hazard data is temporarily unavailable. Please try again shortly.");

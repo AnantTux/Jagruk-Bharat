@@ -4,24 +4,24 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.15 0.02 200); /* Dark slate background */
-  --foreground: oklch(0.95 0.01 180); /* Light text */
-  --card: oklch(0.18 0.02 200); /* Dark slate cards */
-  --card-foreground: oklch(0.95 0.01 180); /* Light card text */
-  --popover: oklch(0.15 0.02 200); /* Dark popover */
-  --popover-foreground: oklch(0.95 0.01 180); /* Light popover text */
+  --background: oklch(0.98 0.005 250); /* White page background */
+  --foreground: oklch(0.22 0.03 250); /* Dark blue text */
+  --card: oklch(1 0 0); /* White cards */
+  --card-foreground: oklch(0.22 0.03 250); /* Dark card text */
+  --popover: oklch(1 0 0); /* White popover */
+  --popover-foreground: oklch(0.22 0.03 250); /* Dark popover text */
   --primary: oklch(0.62 0.18 250); /* Accessible blue primary */
   --primary-foreground: oklch(0.98 0.01 250); /* Light text on primary */
   --secondary: oklch(0.27 0.055 250); /* Blue secondary */
-  --secondary-foreground: oklch(0.95 0.01 180); /* Light text on secondary */
-  --muted: oklch(0.25 0.05 200); /* Dark slate muted */
-  --muted-foreground: oklch(0.65 0.03 180); /* Medium-light muted text */
+  --secondary-foreground: oklch(0.22 0.03 250); /* Dark secondary text */
+  --muted: oklch(0.95 0.015 250); /* Light blue muted */
+  --muted-foreground: oklch(0.45 0.03 250); /* Muted text */
   --accent: oklch(0.55 0.16 245); /* Blue accent */
   --accent-foreground: oklch(0.98 0.01 250); /* Light text on accent */
   --destructive: oklch(0.65 0.22 25); /* Red for destructive */
-  --destructive-foreground: oklch(0.95 0.01 180); /* Light text on destructive */
-  --border: oklch(0.25 0.05 200); /* Dark slate border */
-  --input: oklch(0.25 0.05 200); /* Dark slate input background */
+  --destructive-foreground: oklch(1 0 0); /* Light text on destructive */
+  --border: oklch(0.85 0.03 250); /* Light blue border */
+  --input: oklch(1 0 0); /* White input */
   --ring: oklch(0.62 0.18 250 / 0.45); /* Blue focus ring */
   --chart-1: oklch(0.62 0.18 250); /* Blue chart */
   --chart-2: oklch(0.65 0.22 25); /* Red chart */
@@ -137,6 +137,8 @@ body.report-page-active .text-amber-400, body.report-page-active .text-amber-300
 body.report-page-active .ring-amber-400 { --tw-ring-color: #2563eb !important; }
 .analytics-page .bg-slate-900\/70, .analytics-page .bg-slate-950\/90 { background-color: #ffffff !important; }
 .analytics-page .border-blue-900 { border-color: #bfdbfe !important; }
+section[aria-label="Interactive safety map"] .left-4.top-4 { left: auto !important; right: 1rem; }
+section[aria-label="Interactive safety map"] aside button.border-slate-400 { background: #ffffff !important; border-color: #2563eb !important; color: #1d4ed8 !important; }
 body.auth-page-active { background: #f8fafc; }
 body.auth-page-active .bg-slate-900, body.auth-page-active .bg-slate-800, body.auth-page-active .bg-slate-800\/90 { background-color: #ffffff !important; }
 body.auth-page-active .bg-slate-700 { background-color: #ffffff !important; }

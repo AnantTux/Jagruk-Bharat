@@ -3,7 +3,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Camera, ChevronRight, Layers, MapPin, RefreshCw, Search, ThumbsDown, ThumbsUp } from "lucide-react";
+import { AlertTriangle, ChevronRight, Layers, MapPin, RefreshCw, Search, ThumbsDown, ThumbsUp } from "lucide-react";
 import { HazardMap } from "@/components/HazardMap";
 import { useHazards } from "@/hooks/use-hazards";
 import { DEFAULT_ZOOM, findHazard, formatTimeAgo, hazardTrustScore, hazardTypeLabel, INDIA_CENTER } from "@/lib/hazard-utils";
@@ -11,6 +11,8 @@ import { dashboardHazardTypes } from "@/lib/hazard-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { SiteBrand } from "@/components/site-brand";
+import { AuthNav } from "@/components/auth-nav";
 
 export default function MapDashboard() {
     const { hazards, loading, error, refresh, voteHazard } = useHazards();
@@ -63,8 +65,8 @@ export default function MapDashboard() {
     return <main className="min-h-screen bg-[#edf1f2] text-slate-900">
         <header className="border-b border-blue-900 bg-[#1264b9] text-white">
             <div className="flex min-h-[88px] flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
-                <Link href="/" className="focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70"><p className="text-3xl font-bold tracking-tight sm:text-4xl">JAGRUK BHARAT</p><p className="mt-1 text-sm font-medium text-blue-100">Public hazard map and community safety signals</p></Link>
-                <nav aria-label="Primary" className="flex items-center gap-2"><Button variant="ghost" className="text-white hover:bg-white/15 hover:text-white" asChild><Link href="/report"><Camera className="mr-2 h-4 w-4" />Report hazard</Link></Button><Button variant="ghost" className="text-white hover:bg-white/15 hover:text-white" asChild><Link href="/analytics">Analytics</Link></Button></nav>
+                <SiteBrand light />
+                <nav aria-label="Primary" className="flex items-center gap-2"><AuthNav light showDashboard={false} /></nav>
             </div>
             <div className="h-2 bg-[#78be4c]" />
         </header>

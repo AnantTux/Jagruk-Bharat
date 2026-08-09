@@ -95,9 +95,12 @@ export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFA
                     fillOpacity: 0.9,
                 });
                 const safeType = hazard.type.replace(/[^a-z0-9-]/gi, "").replace(/-/g, " ");
+                const photo = typeof hazard.photoUrls?.[0] === "string"
+                    ? `<br/><img src="${hazard.photoUrls[0].replace(/"/g, "%22")}" alt="Hazard evidence" style="width:160px;height:100px;object-fit:cover;margin-top:6px;border-radius:6px"/>`
+                    : "";
                 marker.bindPopup(`<strong>${safeType}</strong><br/>
           ${hazard.severity} risk · ${hazard.reports} report(s)<br/>
-          <small>${hazard.lat.toFixed(4)}, ${hazard.lng.toFixed(4)}</small>`);
+          <small>Approx. ${hazard.lat.toFixed(3)}, ${hazard.lng.toFixed(3)}</small>${photo}`);
                 if (onMarkerClick) {
                     marker.on("click", () => onMarkerClick(hazard.id));
                 }

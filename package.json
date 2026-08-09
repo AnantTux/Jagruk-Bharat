@@ -26,7 +26,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "pnpm lint && pnpm test && pnpm build",
-    "user:suspend": "node --env-file=.env.local scripts/suspend-user.js"
+    "user:suspend": "node --env-file=.env.local scripts/suspend-user.js",
+    "user:role": "node --env-file=.env.local scripts/set-user-role.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

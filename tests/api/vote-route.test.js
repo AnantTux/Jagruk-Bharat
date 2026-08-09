@@ -7,9 +7,14 @@ vi.mock("@/lib/hazard-store", () => ({
 vi.mock("@/lib/auth", () => ({
     getCurrentUser: vi.fn(),
 }));
+vi.mock("@/lib/hazard-rate-limit", () => ({
+    checkRateLimit: vi.fn(),
+    getRequestIp: vi.fn(() => "127.0.0.1"),
+}));
 
 import { voteHazard } from "@/lib/hazard-store";
 import { getCurrentUser } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/hazard-rate-limit";
 import { POST } from "@/app/api/hazards/[id]/vote/route";
 
 function requestWith(body) {
@@ -26,6 +31,7 @@ describe("/api/hazards/[id]/vote", () => {
     beforeEach(() => {
         vi.resetAllMocks();
         getCurrentUser.mockResolvedValue({ _id: "user-1" });
+        checkRateLimit.mockResolvedValue({ allowed: true, retryAfterSeconds: 60 });
     });
 
     test("records a valid vote", async () => {

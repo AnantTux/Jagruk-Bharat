@@ -4,13 +4,21 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { AuthToken } from "@/lib/models/auth-token";
 import { Session } from "@/lib/models/session";
 import { User } from "@/lib/models/user";
+import { checkRateLimit, getRequestIp } from "@/lib/hazard-rate-limit";
+import { requireSameOrigin } from "@/lib/request-security";
 
 export async function POST(request) {
+    const crossSiteResponse = requireSameOrigin(request);
+    if (crossSiteResponse)
+        return crossSiteResponse;
     const input = await request.json();
     const passwordError = validatePassword(input.password);
     if (passwordError)
         return NextResponse.json({ error: passwordError }, { status: 400 });
     await connectToDatabase();
+    const rateLimit = await checkRateLimit({ namespace: "password-reset-code", identifier: `${getRequestIp(request)}:${normalizeEmail(input.email)}`, limit: 5, windowMs: 15 * 60 * 1000 });
+    if (!rateLimit.allowed)
+        return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } });
     const user = await User.findOne({ email: normalizeEmail(input.email), status: "active" });
     if (!user)
         return NextResponse.json({ error: "Invalid or expired reset code." }, { status: 400 });

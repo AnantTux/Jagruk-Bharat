@@ -10,10 +10,16 @@ vi.mock("@/lib/auth-crypto", () => ({
 }));
 vi.mock("@/lib/mongodb", () => ({ connectToDatabase: vi.fn() }));
 vi.mock("@/lib/models/user", () => ({ User: { findOne: vi.fn() } }));
+vi.mock("@/lib/hazard-rate-limit", () => ({
+    checkRateLimit: vi.fn(),
+    getRequestIp: vi.fn(() => "127.0.0.1"),
+}));
+vi.mock("@/lib/audit", () => ({ writeAuditLog: vi.fn() }));
 
 import { createSession } from "@/lib/auth";
 import { verifyPassword } from "@/lib/auth-crypto";
 import { User } from "@/lib/models/user";
+import { checkRateLimit } from "@/lib/hazard-rate-limit";
 import { POST } from "@/app/api/auth/login/route";
 
 function loginRequest() {
@@ -29,7 +35,10 @@ function returnUser(user) {
 }
 
 describe("/api/auth/login", () => {
-    beforeEach(() => vi.resetAllMocks());
+    beforeEach(() => {
+        vi.resetAllMocks();
+        checkRateLimit.mockResolvedValue({ allowed: true, retryAfterSeconds: 60 });
+    });
 
     test("rejects an incorrect password", async () => {
         returnUser({ _id: "user-1", passwordHash: "stored" });

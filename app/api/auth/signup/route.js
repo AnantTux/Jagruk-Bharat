@@ -4,13 +4,21 @@ import { createVerificationCode, hashPassword, hashToken, normalizeEmail, valida
 import { sendAuthEmail } from "@/lib/auth-email";
 import { AuthToken } from "@/lib/models/auth-token";
 import { User } from "@/lib/models/user";
+import { checkRateLimit, getRequestIp } from "@/lib/hazard-rate-limit";
+import { requireSameOrigin } from "@/lib/request-security";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request) {
     try {
+        const crossSiteResponse = requireSameOrigin(request);
+        if (crossSiteResponse)
+            return crossSiteResponse;
         const input = await request.json();
         const email = normalizeEmail(input.email);
+        const rateLimit = await checkRateLimit({ namespace: "signup", identifier: getRequestIp(request), limit: 5, windowMs: 60 * 60 * 1000 });
+        if (!rateLimit.allowed)
+            return NextResponse.json({ error: "Too many sign-up attempts. Try again later." }, { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } });
         const passwordError = validatePassword(input.password);
         if (!EMAIL_PATTERN.test(email) || passwordError || !input.firstName?.trim() || !input.lastName?.trim() || !input.region?.trim()) {
             return NextResponse.json({ error: passwordError ?? "Please complete all required fields." }, { status: 400 });
@@ -24,7 +32,8 @@ export async function POST(request) {
             firstName: input.firstName.trim(),
             lastName: input.lastName.trim(),
             region: input.region.trim(),
-            role: input.role?.trim() || "citizen",
+            // Public registration must never be allowed to grant staff privileges.
+            role: "citizen",
             passwordHash: await hashPassword(input.password),
             notificationsEnabled: Boolean(input.notificationsEnabled),
         });

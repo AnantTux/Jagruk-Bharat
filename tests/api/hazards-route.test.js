@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 vi.mock("@/lib/hazard-store", () => ({
     createHazard: vi.fn(),
     listHazards: vi.fn(),
+    publicHazard: vi.fn((hazard) => hazard),
 }));
 
 vi.mock("@/lib/save-hazard-photos", () => ({

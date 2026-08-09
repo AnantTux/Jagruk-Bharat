@@ -17,6 +17,7 @@ The core hazard-reporting workflow is functional: verified users can submit geol
 - **Analytics** — Overview of hazard trends and activity
 - **Community verification** — Upvote or downvote reports to contribute to their trust score
 - **Accounts** — Verified email/password accounts, secure sessions, logout, suspension support, and password reset
+- **Privacy controls** — Public map coordinates are rounded, uploads are re-encoded to remove EXIF metadata, and users can flag harmful content for moderation
 
 ## How it works
 
@@ -154,6 +155,20 @@ Open [http://localhost:3000](http://localhost:3000). The first submitted report 
 | `AUTH_EMAIL_FROM` | Sender address on a domain verified with Resend |
 | `CRON_SECRET` | Long random value used to protect the automated report-expiry endpoint |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob read/write token for permanent production photo uploads |
+
+### Initial administrator
+
+All public sign-ups are permanently created as `citizen`; neither the browser nor Firebase can assign staff roles. After creating and verifying your own account, make it the first administrator from a trusted terminal:
+
+```powershell
+pnpm user:role you@example.com admin
+```
+
+Administrators can then use `PATCH /api/admin/users/:id/role` to assign `citizen`, `responder`, `moderator`, or `admin`. Every role change is recorded in the audit log. Moderators can review flagged content through `GET` and `PATCH /api/admin/moderation`.
+
+### Privacy and content moderation
+
+Public map coordinates are intentionally rounded to approximately 100 metres. The exact point stays in MongoDB for server-side proximity checks. Uploaded images are signature-checked, resized, re-encoded as JPEG, and stripped of camera metadata before storage. Users can submit an abuse/privacy/misinformation flag at `POST /api/hazards/:id/flags`; staff can hide or reject a flagged hazard. Reports are assigned a 90-day retention timestamp for a scheduled cleanup worker.
 
 When the two email variables are omitted during local development, the signup and password-reset screens display the one-time development code. Production never returns these codes to the browser.
 

@@ -40,7 +40,8 @@ export async function POST(request) {
                 firstName,
                 lastName,
                 region,
-                role: text(body.role, 50) || "citizen",
+                // Firebase proves identity, not platform authorization.
+                role: "citizen",
                 notificationsEnabled: Boolean(body.notificationsEnabled),
                 emailVerifiedAt: new Date(),
             });

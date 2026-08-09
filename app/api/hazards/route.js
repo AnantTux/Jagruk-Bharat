@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { createHazard, listHazards } from "@/lib/hazard-store";
+import { createHazard, listHazards, publicHazard } from "@/lib/hazard-store";
 import { saveHazardPhotos } from "@/lib/save-hazard-photos";
 import { parseHazardFormData, validateHazardInput } from "@/lib/hazard-validation";
 import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/auth";
 import { checkHazardSubmissionRateLimit, getRequestIp } from "@/lib/hazard-rate-limit";
+import { requireSameOrigin } from "@/lib/request-security";
 export const dynamic = "force-dynamic";
 export async function GET() {
     try {
@@ -17,6 +18,9 @@ export async function GET() {
 }
 export async function POST(request) {
     try {
+        const crossSiteResponse = requireSameOrigin(request);
+        if (crossSiteResponse)
+            return crossSiteResponse;
         const user = await getCurrentUser();
         if (!user)
             return NextResponse.json({ error: "Sign in with a verified account to report a hazard." }, { status: 401 });
@@ -53,7 +57,7 @@ export async function POST(request) {
                 photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
                 reportedByUserId: user._id,
             }, hazardId);
-            return NextResponse.json({ hazard }, { status: 201 });
+            return NextResponse.json({ hazard: publicHazard(hazard) }, { status: 201 });
         }
         const body = (await request.json());
         const input = validateHazardInput(body);
@@ -61,7 +65,7 @@ export async function POST(request) {
             return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
         }
         const hazard = await createHazard({ ...input, reportedByUserId: user._id });
-        return NextResponse.json({ hazard }, { status: 201 });
+        return NextResponse.json({ hazard: publicHazard(hazard) }, { status: 201 });
     }
     catch (e) {
         const message = e instanceof Error ? e.message : "Invalid request";

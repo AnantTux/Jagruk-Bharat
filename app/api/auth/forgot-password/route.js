@@ -4,12 +4,20 @@ import { sendAuthEmail } from "@/lib/auth-email";
 import { connectToDatabase } from "@/lib/mongodb";
 import { AuthToken } from "@/lib/models/auth-token";
 import { User } from "@/lib/models/user";
+import { checkRateLimit, getRequestIp } from "@/lib/hazard-rate-limit";
+import { requireSameOrigin } from "@/lib/request-security";
 
 const MESSAGE = "If that account exists, a password-reset code has been sent.";
 
 export async function POST(request) {
+    const crossSiteResponse = requireSameOrigin(request);
+    if (crossSiteResponse)
+        return crossSiteResponse;
     const input = await request.json();
     const email = normalizeEmail(input.email);
+    const rateLimit = await checkRateLimit({ namespace: "password-reset", identifier: `${getRequestIp(request)}:${email}`, limit: 3, windowMs: 15 * 60 * 1000 });
+    if (!rateLimit.allowed)
+        return NextResponse.json({ message: MESSAGE }, { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } });
     await connectToDatabase();
     const user = await User.findOne({ email, status: "active" });
     let developmentCode;

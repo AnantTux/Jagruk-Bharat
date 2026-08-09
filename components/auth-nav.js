@@ -42,6 +42,7 @@ export function AuthNav() {
         </>;
     return <>
         <span className="text-sm text-slate-300">Hi, {user.firstName}</span>
+        {user.role === "admin" && <Button variant="outline" className="border-slate-600 bg-slate-800 text-white hover:bg-slate-700" asChild><Link href="/admin">Admin</Link></Button>}
         <Button className="bg-amber-400 font-bold text-slate-800 hover:bg-amber-500" asChild><Link href="/dashboard">Dashboard</Link></Button>
         <Button variant="ghost" onClick={logout} className="text-slate-300 hover:text-white">Log out</Button>
     </>;

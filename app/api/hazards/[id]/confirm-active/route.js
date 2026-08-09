@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { confirmHazardActive } from "@/lib/hazard-store";
+import { requireSameOrigin } from "@/lib/request-security";
 
-export async function POST(_request, { params }) {
+export async function POST(request, { params }) {
+    const crossSiteResponse = requireSameOrigin(request);
+    if (crossSiteResponse)
+        return crossSiteResponse;
     const user = await getCurrentUser();
     if (!user)
         return NextResponse.json({ error: "Sign in to confirm your report." }, { status: 401 });

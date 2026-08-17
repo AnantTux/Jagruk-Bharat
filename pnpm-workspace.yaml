@@ -1,5 +1,9 @@
 allowBuilds:
   '@firebase/util': true
+  # Sentry's optional CLI is not needed by the running application.
+  '@sentry/cli': false
+  # BullMQ can run without this optional native optimization.
+  msgpackr-extract: false
   protobufjs: true
   sharp: true
   unrs-resolver: true

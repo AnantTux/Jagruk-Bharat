@@ -1,0 +1,15 @@
+.git
+.github
+.next
+.pnpm-store
+.vercel
+node_modules
+playwright-report
+test-results
+coverage
+.env*
+!.env.example
+Dockerfile
+docker-compose.yml
+npm-debug.log*
+pnpm-debug.log*

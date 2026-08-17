@@ -228,3 +228,19 @@ public/           # Static assets
 ## License
 
 This project is open source and available under the [MIT License](LICENSE).
+
+## Local Docker workflow
+
+Use Docker to run the app and a separate local MongoDB database on your computer. This does not use Vercel or Render.
+
+1. Install and open [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+2. Create `.env.local` from `.env.example` and fill in your Firebase values. Keep secrets out of Git.
+3. In this project folder, run:
+
+   ```bash
+   docker compose --env-file .env.local up --build
+   ```
+
+4. Open http://localhost:3000.
+
+The Docker setup stores MongoDB data and locally uploaded photos in Docker volumes. It does not need a Vercel Blob token for local testing. Stop it with `docker compose down`. To erase only the local test database and uploaded test photos, use `docker compose down -v`.

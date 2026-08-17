@@ -5,13 +5,14 @@ import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/auth";
 import { checkHazardSubmissionRateLimit, getRequestIp } from "@/lib/hazard-rate-limit";
 import { requireSameOrigin } from "@/lib/request-security";
+import { reportServerError } from "@/lib/error-reporting";
 export const dynamic = "force-dynamic";
 export async function GET() {
     try {
         return NextResponse.json({ hazards: await listHazards() });
     }
     catch (error) {
-        console.error("Unable to load hazards", error);
+        reportServerError(error, { message: "Unable to load hazards", route: "/api/hazards" });
         return NextResponse.json({ error: "Unable to load hazards" }, { status: 500 });
     }
 }
@@ -70,6 +71,7 @@ export async function POST(request) {
         return NextResponse.json({ hazard: publicHazard(hazard) }, { status: 201 });
     }
     catch (e) {
+        reportServerError(e, { message: "Hazard submission failed", route: "/api/hazards" });
         const message = e instanceof Error ? e.message : "Invalid request";
         return NextResponse.json({ error: message }, { status: 400 });
     }

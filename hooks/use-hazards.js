@@ -1,14 +1,24 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef } from "react";
+
+const HAZARD_QUERY_KEY = ["hazards"];
 const LONG_POLL_TIMEOUT_MS = 25000;
 const RETRY_DELAY_MS = 1500;
 
 function getHazardSocketUrl() {
-    if (process.env.NEXT_PUBLIC_HAZARD_WS_URL) {
+    if (process.env.NEXT_PUBLIC_HAZARD_WS_URL)
         return process.env.NEXT_PUBLIC_HAZARD_WS_URL;
-    }
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     return `${protocol}//${window.location.host}/ws/hazards`;
+}
+
+async function fetchHazards() {
+    const res = await fetch("/api/hazards", { cache: "no-store", signal: AbortSignal.timeout(25000) });
+    if (!res.ok)
+        throw new Error("Hazard data is temporarily unavailable. Please try again shortly.");
+    return (await res.json()).hazards;
 }
 
 function getVoterLocation() {
@@ -17,202 +27,123 @@ function getVoterLocation() {
     return new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition((position) => {
             resolve({ lat: position.coords.latitude, lng: position.coords.longitude });
-        }, () => {
-            reject(new Error("Allow location access to vote on a nearby hazard."));
-        }, {
-            enableHighAccuracy: false,
-            maximumAge: 60000,
-            timeout: 15000,
+        }, () => reject(new Error("Allow location access to vote on a nearby hazard.")), {
+            enableHighAccuracy: false, maximumAge: 60000, timeout: 15000,
         });
     });
 }
-export function useHazards() {
-    const [hazards, setHazards] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [submitting, setSubmitting] = useState(false);
-    const [lastUpdatedAt, setLastUpdatedAt] = useState(0);
-    const mounted = useRef(true);
-    const refresh = useCallback(async () => {
-        try {
-            const res = await fetch("/api/hazards", {
-                cache: "no-store",
-                // A serverless MongoDB connection can take longer than a normal request
-                // immediately after deployment or a cold start.
-                signal: AbortSignal.timeout(25000),
-            });
-            if (!res.ok)
-                throw new Error("Hazard data is temporarily unavailable. Please try again shortly.");
-            const data = (await res.json());
-            if (mounted.current) {
-                setHazards(data.hazards);
-                setLastUpdatedAt(Date.now());
-                setError(null);
-            }
-        }
-        catch (e) {
-            if (mounted.current) {
-                setError(e?.name === "TimeoutError"
-                    ? "Hazard data took too long to load. Please refresh the page."
-                    : e instanceof Error ? e.message : "Hazard data is temporarily unavailable.");
-            }
-        }
-        finally {
-            if (mounted.current)
-                setLoading(false);
-        }
-    }, []);
-    useEffect(() => {
-        mounted.current = true;
-        refresh();
-        let cancelled = false;
-        let socket;
-        let fallbackStarted = false;
-        let connectionTimeout;
-        let retryTimeout;
-        let abortController;
 
-        const waitToRetry = () => new Promise((resolve) => {
-            retryTimeout = setTimeout(resolve, RETRY_DELAY_MS);
+async function postHazard({ input, photos }) {
+    let response;
+    if (photos?.length) {
+        const form = new FormData();
+        ["type", "severity", "description", "locationDescription"].forEach((key) => {
+            if (input[key]) form.append(key, input[key]);
         });
+        form.append("lat", String(input.lat));
+        form.append("lng", String(input.lng));
+        if (input.emergency) form.append("emergency", "true");
+        photos.forEach((file) => form.append("photos", file));
+        response = await fetch("/api/hazards", { method: "POST", body: form });
+    }
+    else {
+        response = await fetch("/api/hazards", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
+        });
+    }
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error ?? "Failed to submit report");
+    return data.hazard;
+}
 
+export function useHazards() {
+    const queryClient = useQueryClient();
+    const query = useQuery({ queryKey: HAZARD_QUERY_KEY, queryFn: fetchHazards });
+    const submitMutation = useMutation({
+        mutationFn: postHazard,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: HAZARD_QUERY_KEY }),
+    });
+    const voteMutation = useMutation({
+        mutationFn: async ({ id, direction }) => {
+            const voterLocation = await getVoterLocation();
+            const res = await fetch(`/api/hazards/${id}/vote`, {
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ direction, voterLocation }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error ?? "Failed to record vote");
+            return data.hazard;
+        },
+        onMutate: async ({ id, direction }) => {
+            await queryClient.cancelQueries({ queryKey: HAZARD_QUERY_KEY });
+            const previous = queryClient.getQueryData(HAZARD_QUERY_KEY);
+            const field = direction === "up" ? "upvotes" : "downvotes";
+            queryClient.setQueryData(HAZARD_QUERY_KEY, (hazards = []) => hazards.map((hazard) => hazard.id === id
+                ? { ...hazard, [field]: (hazard[field] ?? 0) + 1 } : hazard));
+            return { previous };
+        },
+        onError: (_error, _variables, context) => {
+            if (context?.previous) queryClient.setQueryData(HAZARD_QUERY_KEY, context.previous);
+        },
+        onSettled: () => queryClient.invalidateQueries({ queryKey: HAZARD_QUERY_KEY }),
+    });
+    const refresh = useCallback(() => queryClient.invalidateQueries({ queryKey: HAZARD_QUERY_KEY }), [queryClient]);
+    const refreshRef = useRef(refresh);
+    refreshRef.current = refresh;
+
+    useEffect(() => {
+        let cancelled = false, socket, fallbackStarted = false, connectionTimeout, retryTimeout, abortController;
+        const waitToRetry = () => new Promise((resolve) => { retryTimeout = setTimeout(resolve, RETRY_DELAY_MS); });
         const startLongPolling = async () => {
-            if (fallbackStarted)
-                return;
+            if (fallbackStarted) return;
             fallbackStarted = true;
-
             while (!cancelled) {
                 abortController = new AbortController();
                 try {
                     const response = await fetch(`/api/hazards/stream?timeout=${LONG_POLL_TIMEOUT_MS}`, {
-                        cache: "no-store",
-                        signal: abortController.signal,
+                        cache: "no-store", signal: abortController.signal,
                     });
-                    if (!response.ok)
-                        throw new Error("Live updates are unavailable");
-                    if (!cancelled)
-                        await refresh();
+                    if (!response.ok) throw new Error("Live updates are unavailable");
+                    if (!cancelled) await refreshRef.current();
                 }
-                catch (e) {
-                    if (!cancelled && e?.name !== "AbortError")
-                        await waitToRetry();
+                catch (error) {
+                    if (!cancelled && error?.name !== "AbortError") await waitToRetry();
                 }
             }
         };
-
-        const startFallback = () => {
-            void startLongPolling();
-        };
-
-        if (typeof WebSocket === "undefined") {
-            startFallback();
-        }
+        const startFallback = () => void startLongPolling();
+        if (typeof WebSocket === "undefined") startFallback();
         else {
             try {
                 socket = new WebSocket(getHazardSocketUrl());
                 connectionTimeout = setTimeout(() => {
-                    if (socket?.readyState !== WebSocket.OPEN) {
-                        socket?.close();
-                        startFallback();
-                    }
+                    if (socket?.readyState !== WebSocket.OPEN) { socket?.close(); startFallback(); }
                 }, 3000);
-
-                socket.onopen = () => {
-                    clearTimeout(connectionTimeout);
-                };
+                socket.onopen = () => clearTimeout(connectionTimeout);
                 socket.onmessage = (message) => {
-                    try {
-                        const event = JSON.parse(message.data);
-                        if (event.type === "hazards-updated")
-                            void refresh();
-                    }
-                    catch {
-                        // Ignore malformed messages and keep the connection alive.
-                    }
+                    try { if (JSON.parse(message.data).type === "hazards-updated") void refreshRef.current(); }
+                    catch { /* Ignore malformed live-update events. */ }
                 };
                 socket.onerror = () => socket.close();
-                socket.onclose = () => {
-                    clearTimeout(connectionTimeout);
-                    if (!cancelled)
-                        startFallback();
-                };
+                socket.onclose = () => { clearTimeout(connectionTimeout); if (!cancelled) startFallback(); };
             }
-            catch {
-                startFallback();
-            }
+            catch { startFallback(); }
         }
-
         return () => {
-            cancelled = true;
-            mounted.current = false;
-            clearTimeout(connectionTimeout);
-            clearTimeout(retryTimeout);
-            abortController?.abort();
-            socket?.close();
+            cancelled = true; clearTimeout(connectionTimeout); clearTimeout(retryTimeout);
+            abortController?.abort(); socket?.close();
         };
-    }, [refresh]);
-    const submitHazard = useCallback(async (input, photos) => {
-        setSubmitting(true);
-        setError(null);
-        try {
-            let res;
-            if (photos && photos.length > 0) {
-                const form = new FormData();
-                form.append("type", input.type);
-                form.append("severity", input.severity);
-                form.append("lat", String(input.lat));
-                form.append("lng", String(input.lng));
-                if (input.description)
-                    form.append("description", input.description);
-                if (input.locationDescription)
-                    form.append("locationDescription", input.locationDescription);
-                if (input.emergency)
-                    form.append("emergency", "true");
-                photos.forEach((file) => form.append("photos", file));
-                res = await fetch("/api/hazards", { method: "POST", body: form });
-            }
-            else {
-                res = await fetch("/api/hazards", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(input),
-                });
-            }
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error ?? "Failed to submit report");
-            }
-            await refresh();
-            return data.hazard;
-        }
-        catch (e) {
-            const message = e instanceof Error ? e.message : "Failed to submit report";
-            setError(message);
-            throw e;
-        }
-        finally {
-            setSubmitting(false);
-        }
-    }, [refresh]);
-    const voteHazard = useCallback(async (id, direction) => {
-        try {
-            const voterLocation = await getVoterLocation();
-            const res = await fetch(`/api/hazards/${id}/vote`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ direction, voterLocation }),
-            });
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error ?? "Failed to record vote");
-            }
-            await refresh();
-            return data.hazard;
-        }
-        catch (e) {
-            setError(e instanceof Error ? e.message : "Failed to record vote");
-            throw e;
-        }
-    }, [refresh]);
-    return { hazards, loading, error, submitting, lastUpdatedAt, refresh, submitHazard, voteHazard };
+    }, []);
+
+    const activeError = query.error ?? submitMutation.error ?? voteMutation.error;
+    return {
+        hazards: query.data ?? [],
+        loading: query.isLoading,
+        error: activeError?.name === "TimeoutError" ? "Hazard data took too long to load. Please refresh the page."
+            : activeError?.message ?? null,
+        submitting: submitMutation.isPending,
+        lastUpdatedAt: query.dataUpdatedAt,
+        refresh,
+        submitHazard: (input, photos) => submitMutation.mutateAsync({ input, photos }),
+        voteHazard: (id, direction) => voteMutation.mutateAsync({ id, direction }),
+    };
 }

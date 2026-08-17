@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, MailCheck, ShieldCheck, UserPlus } from "lucide-react";
-import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, signInWithPopup, signOut, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, getRedirectResult, GoogleAuthProvider, sendEmailVerification, signInWithRedirect, signOut, updateProfile } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,17 @@ export default function SignupPage() {
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     useEffect(() => { document.body.classList.add("auth-page-active"); return () => document.body.classList.remove("auth-page-active"); }, []);
+
+    const completeGoogleAccount = useCallback(async (user) => {
+        const response = await fetch("/api/auth/firebase/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken: await user.getIdToken(true) }) });
+        const data = await response.json();
+        if (data.requiresProfile) { router.push("/complete-profile"); return; }
+        if (!response.ok) throw new Error(data.error || "Unable to create your session.");
+        router.push("/dashboard");
+        router.refresh();
+    }, [router]);
+
+    useEffect(() => { let active = true; void getRedirectResult(getFirebaseAuth()).then(async (result) => { if (!result || !active) return; setSubmitting(true); await completeGoogleAccount(result.user); }).catch((googleError) => { if (active) setError(googleSignInMessage(googleError)); }).finally(() => { if (active) setSubmitting(false); }); return () => { active = false; }; }, [completeGoogleAccount]);
 
     async function createAccount(event) {
         event.preventDefault();
@@ -64,25 +75,8 @@ export default function SignupPage() {
         try {
             const provider = new GoogleAuthProvider();
             provider.setCustomParameters({ prompt: "select_account" });
-            const result = await signInWithPopup(getFirebaseAuth(), provider);
-            const response = await fetch("/api/auth/firebase/session", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ idToken: await result.user.getIdToken(true) }),
-            });
-            const data = await response.json();
-            if (data.requiresProfile) {
-                router.push("/complete-profile");
-                return;
-            }
-            if (!response.ok) throw new Error(data.error || "Unable to create your session.");
-            router.push("/dashboard");
-            router.refresh();
-        } catch (googleError) {
-            setError(googleSignInMessage(googleError));
-        } finally {
-            setSubmitting(false);
-        }
+            await signInWithRedirect(getFirebaseAuth(), provider);
+        } catch (googleError) { setError(googleSignInMessage(googleError)); setSubmitting(false); }
     }
 
     return <div className="flex min-h-screen flex-col bg-slate-900"><main className="flex flex-1 items-center justify-center p-4 py-10"><div className="w-full max-w-md">
@@ -110,8 +104,6 @@ function googleSignInMessage(error) {
     const code = typeof error === "object" && error && "code" in error ? error.code : "";
     if (code === "auth/operation-not-allowed") return "Google sign-in has not been enabled for this Firebase project yet.";
     if (code === "auth/unauthorized-domain") return "This website address is not authorised for Google sign-in in Firebase yet.";
-    if (code === "auth/popup-blocked") return "Your browser blocked the Google sign-in window. Allow pop-ups and try again.";
-    if (code === "auth/popup-closed-by-user") return "Google sign-in was cancelled before it completed.";
-    if (code === "auth/internal-error") return "Google sign-in needs one Firebase setup check: enable Google in Authentication, then add this Vercel website address to Firebase’s authorised domains.";
+    if (code === "auth/internal-error") return "Google sign-in could not finish. Please return to this page and try again.";
     return error instanceof Error ? error.message.replace("Firebase: ", "") : "Google sign-in failed.";
 }

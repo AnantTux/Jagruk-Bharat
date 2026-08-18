@@ -11,8 +11,9 @@ describe("hazard validation", () => {
             description: "  Road is under water  ",
             locationDescription: "  Near the metro station  ",
             contactPhone: "  +91 98765 43210  ",
+            observationTime: "1hour",
             emergency: "true",
-        })).toEqual({
+        })).toMatchObject({
             type: "flooding",
             severity: "high",
             lat: 28.6139,
@@ -23,6 +24,7 @@ describe("hazard validation", () => {
             emergency: true,
             photoUrls: undefined,
         });
+        expect(validateHazardInput({ type: "flooding", severity: "high", lat: 28.6139, lng: 77.209, observationTime: "1hour" }).observedAt).toBeInstanceOf(Date);
     });
 
     test.each(["critical", "", null, undefined])("rejects unsupported severity %s", (severity) => {
@@ -60,6 +62,7 @@ describe("hazard validation", () => {
         form.set("lat", "19.076");
         form.set("lng", "72.8777");
         form.set("emergency", "1");
+        form.set("observationTime", "30min");
 
         expect(parseHazardFormData(form)).toMatchObject({
             type: "road-accident",
@@ -67,6 +70,7 @@ describe("hazard validation", () => {
             lat: 19.076,
             lng: 72.8777,
             emergency: true,
+            observedAt: expect.any(Date),
         });
     });
 });

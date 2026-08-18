@@ -17,10 +17,14 @@ import { AlertTriangle, MapPin, Navigation, Upload, ArrowLeft, ArrowRight, Check
 import { SiteBrand } from "@/components/site-brand";
 import { SiteFooter } from "@/components/site-footer";
 import { reportHazardTypes as hazardTypes, severityLevels } from "@/lib/hazard-config";
+const MAX_PHOTOS = 5;
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 export default function ReportHazardPage() {
     const router = useRouter();
     const { submitHazard, submitting, error: submitError } = useHazards();
     const [mapPickMode, setMapPickMode] = useState(false);
+    const [photoError, setPhotoError] = useState("");
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
         hazardType: "",
@@ -28,6 +32,7 @@ export default function ReportHazardPage() {
         location: { lat: "", lng: "", description: "" },
         description: "",
         photos: [],
+        observationTime: "now",
         contact: { phone: "" },
         emergency: false,
     });
@@ -46,7 +51,28 @@ export default function ReportHazardPage() {
     };
     const handlePhotoUpload = (event) => {
         const files = Array.from(event.target.files || []);
-        setFormData((prev) => ({ ...prev, photos: [...prev.photos, ...files] }));
+        const availableSlots = MAX_PHOTOS - formData.photos.length;
+        const acceptedFiles = [];
+        const errors = [];
+        for (const file of files) {
+            if (acceptedFiles.length >= availableSlots) {
+                errors.push(`You can upload up to ${MAX_PHOTOS} photos per report.`);
+                break;
+            }
+            if (!ALLOWED_PHOTO_TYPES.has(file.type)) {
+                errors.push(`${file.name} is not a supported image type.`);
+                continue;
+            }
+            if (file.size > MAX_PHOTO_BYTES) {
+                errors.push(`${file.name} is larger than 10MB.`);
+                continue;
+            }
+            acceptedFiles.push(file);
+        }
+        if (acceptedFiles.length)
+            setFormData((prev) => ({ ...prev, photos: [...prev.photos, ...acceptedFiles] }));
+        setPhotoError(errors[0] || "");
+        event.currentTarget.value = "";
     };
     const getCurrentLocation = () => {
         if (navigator.geolocation) {
@@ -60,7 +86,10 @@ export default function ReportHazardPage() {
                     },
                 }));
                 setMapPickMode(false);
-            });
+            }, () => window.alert("We could not access your location. Enter coordinates manually or choose a point on the map."));
+        }
+        else {
+            window.alert("Your browser does not support location access. Enter coordinates manually or choose a point on the map.");
         }
     };
     const handleMapPick = (lat, lng) => {
@@ -72,6 +101,7 @@ export default function ReportHazardPage() {
                 lng: lng.toFixed(6),
             },
         }));
+        setMapPickMode(false);
     };
     const handleSubmit = async () => {
         try {
@@ -83,6 +113,7 @@ export default function ReportHazardPage() {
                 description: formData.description || undefined,
             locationDescription: formData.location.description || undefined,
             contactPhone: formData.contact.phone || undefined,
+            observationTime: formData.observationTime,
             emergency: formData.emergency,
             }, formData.photos);
             router.push("/dashboard");
@@ -91,6 +122,45 @@ export default function ReportHazardPage() {
             // error surfaced via submitError
         }
     };
+    const renderEvidenceStep = () => (_jsxs("div", { className: "space-y-6", children: [
+        _jsxs("div", { className: "text-center", children: [
+            _jsx("h2", { className: "text-2xl font-bold text-white mb-2", children: "Add photos and details" }),
+            _jsx("p", { className: "text-slate-300", children: "Visual evidence helps the community understand and verify reports." }),
+        ] }),
+        _jsxs("div", { className: "space-y-4", children: [
+            _jsxs("div", { className: "space-y-2", children: [
+                _jsx(Label, { className: "text-white", children: "Upload Photos (optional)" }),
+                _jsxs("div", { className: "border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:bg-slate-700/50 transition-colors bg-slate-800", children: [
+                    _jsx("input", { type: "file", multiple: true, accept: "image/jpeg,image/png,image/webp,image/gif", onChange: handlePhotoUpload, className: "hidden", id: "photo-upload" }),
+                    _jsxs(Label, { htmlFor: "photo-upload", className: "cursor-pointer", children: [
+                        _jsx(Upload, { className: "w-8 h-8 text-slate-400 mx-auto mb-2" }),
+                        _jsx("p", { className: "text-sm font-medium text-white", children: "Click to upload photos" }),
+                        _jsx("p", { className: "text-xs text-slate-400", children: `JPG, PNG, WEBP or GIF · up to ${MAX_PHOTOS} photos, 10MB each` }),
+                    ] }),
+                ] }),
+                photoError && _jsx("p", { role: "alert", className: "text-sm text-amber-300", children: photoError }),
+                photoPreviews.length > 0 && _jsx("div", { className: "grid grid-cols-3 gap-2 mt-4", children: photoPreviews.map((preview, index) => _jsx("div", { className: "relative aspect-square overflow-hidden rounded-lg bg-slate-700", children: _jsx("img", { src: preview.url, alt: `Upload preview ${index + 1}`, className: "h-full w-full object-cover" }) }, preview.url)) }),
+            ] }),
+            _jsxs("div", { className: "space-y-2", children: [
+                _jsx(Label, { htmlFor: "description", className: "text-white", children: "Detailed Description" }),
+                _jsx(Textarea, { id: "description", placeholder: "Describe what you observed, when it happened, and any other relevant details...", rows: 4, value: formData.description, onChange: (event) => setFormData((prev) => ({ ...prev, description: event.target.value })), className: "bg-slate-800 border-slate-600 text-white placeholder:text-slate-400" }),
+            ] }),
+            _jsxs("div", { className: "space-y-2", children: [
+                _jsx(Label, { htmlFor: "observationTime", className: "text-white", children: "Time of Observation" }),
+                _jsxs(Select, { value: formData.observationTime, onValueChange: (observationTime) => setFormData((prev) => ({ ...prev, observationTime })), children: [
+                    _jsx(SelectTrigger, { id: "observationTime", className: "bg-slate-800 border-slate-600 text-white", children: _jsx(SelectValue, {}) }),
+                    _jsxs(SelectContent, { className: "bg-slate-800 border-slate-600", children: [
+                        _jsx(SelectItem, { value: "now", children: "Right now" }),
+                        _jsx(SelectItem, { value: "30min", children: "30 minutes ago" }),
+                        _jsx(SelectItem, { value: "1hour", children: "1 hour ago" }),
+                        _jsx(SelectItem, { value: "2hours", children: "2 hours ago" }),
+                        _jsx(SelectItem, { value: "today", children: "Earlier today" }),
+                        _jsx(SelectItem, { value: "yesterday", children: "Yesterday" }),
+                    ] }),
+                ] }),
+            ] }),
+        ] }),
+    ] }));
     const photoPreviews = useMemo(() => formData.photos.map((file) => ({ file, url: URL.createObjectURL(file) })), [formData.photos]);
     useEffect(() => {
         return () => {
@@ -151,6 +221,8 @@ export default function ReportHazardPage() {
                                                         ? `${formData.location.lat}, ${formData.location.lng}`
                                                         : "No coordinates provided — use GPS or click the map" }), formData.location.description && (_jsx("p", { className: "text-sm text-slate-300 mt-1", children: formData.location.description }))] })] }) }) })] }));
             case 4:
+                return renderEvidenceStep();
+            case "legacy-evidence-step":
                 return (_jsxs("div", { className: "space-y-6", children: [_jsxs("div", { className: "text-center", children: [_jsx("h2", { className: "text-2xl font-bold text-white mb-2", children: "Add photos and details" }), _jsx("p", { className: "text-slate-300", children: "Visual evidence helps the community understand and verify reports." })] }), _jsxs("div", { className: "space-y-4", children: [_jsxs("div", { className: "space-y-2", children: [_jsx(Label, { className: "text-white", children: "Upload Photos" }), _jsxs("div", { className: "border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:bg-slate-700/50 transition-colors bg-slate-800", children: [_jsx("input", { type: "file", multiple: true, accept: "image/*", onChange: handlePhotoUpload, className: "hidden", id: "photo-upload" }), _jsxs(Label, { htmlFor: "photo-upload", className: "cursor-pointer", children: [_jsx(Upload, { className: "w-8 h-8 text-slate-400 mx-auto mb-2" }), _jsx("p", { className: "text-sm font-medium text-white", children: "Click to upload photos" }), _jsx("p", { className: "text-xs text-slate-400", children: "PNG, JPG up to 10MB each" })] })] }), photoPreviews.length > 0 && (_jsx("div", { className: "grid grid-cols-3 gap-2 mt-4", children: photoPreviews.map((preview, index) => (_jsx("div", { className: "relative aspect-square overflow-hidden rounded-lg bg-slate-700", children: _jsx("img", { src: preview.url, alt: `Upload preview ${index + 1}`, className: "h-full w-full object-cover" }) }, preview.url))) }))] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "description", className: "text-white", children: "Detailed Description" }), _jsx(Textarea, { id: "description", placeholder: "Describe what you observed, when it happened, and any other relevant details...", rows: 4, value: formData.description, onChange: (e) => setFormData((prev) => ({ ...prev, description: e.target.value })), className: "bg-slate-800 border-slate-600 text-white placeholder:text-slate-400" })] }), _jsxs("div", { className: "space-y-2", children: [_jsx(Label, { className: "text-white", children: "Time of Observation" }), _jsxs(Select, { children: [_jsx(SelectTrigger, { className: "bg-slate-800 border-slate-600 text-white", children: _jsx(SelectValue, { placeholder: "When did you observe this hazard?" }) }), _jsxs(SelectContent, { className: "bg-slate-800 border-slate-600", children: [_jsx(SelectItem, { value: "now", children: "Right now" }), _jsx(SelectItem, { value: "30min", children: "30 minutes ago" }), _jsx(SelectItem, { value: "1hour", children: "1 hour ago" }), _jsx(SelectItem, { value: "2hours", children: "2 hours ago" }), _jsx(SelectItem, { value: "today", children: "Earlier today" }), _jsx(SelectItem, { value: "yesterday", children: "Yesterday" })] })] })] })] })] }));
             case 5:
                 return (_jsxs("div", { className: "space-y-6", children: [_jsxs("div", { className: "text-center", children: [_jsx("h2", { className: "text-2xl font-bold text-white mb-2", children: "Contact information" }), _jsx("p", { className: "text-slate-300", children: "Your verified account email is already on file. Add a phone number only if you would like follow-up by phone." })] }), _jsxs("div", { className: "space-y-4", children: [_jsxs("div", { className: "space-y-2", children: [_jsx(Label, { htmlFor: "contactPhone", className: "text-white", children: "Phone Number (Optional)" }), _jsx(Input, { id: "contactPhone", type: "tel", placeholder: "+91 98765 43210", value: formData.contact.phone, onChange: (e) => setFormData((prev) => ({

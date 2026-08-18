@@ -57,6 +57,7 @@ describe("/api/hazards", () => {
                 lat: 28.6139,
                 lng: 77.209,
                 description: "Water on the road",
+                observationTime: "1hour",
             }),
         });
 
@@ -68,6 +69,7 @@ describe("/api/hazards", () => {
             severity: "high",
             lat: 28.6139,
             lng: 77.209,
+            observedAt: expect.any(Date),
             reportedByUserId: "user-1",
         }));
         await expect(response.json()).resolves.toEqual({ hazard: created });
@@ -83,6 +85,7 @@ describe("/api/hazards", () => {
         form.set("lat", "19.076");
         form.set("lng", "72.8777");
         form.set("contactPhone", "+91 98765 43210");
+        form.set("observationTime", "30min");
         form.append("photos", new File(["photo-data"], "evidence.jpg", { type: "image/jpeg" }));
 
         const response = await POST(new Request("http://localhost/api/hazards", { method: "POST", body: form }));
@@ -91,6 +94,7 @@ describe("/api/hazards", () => {
         expect(createHazard).toHaveBeenCalledWith(expect.objectContaining({
             type: "road-accident",
             contactPhone: "+91 98765 43210",
+            observedAt: expect.any(Date),
             reportedByUserId: "user-1",
             photoUrls: ["https://images.example/hazard-photo.jpg"],
         }), expect.any(String));

@@ -57,6 +57,7 @@ export async function POST(request) {
                 description: fields.description,
                 locationDescription: fields.locationDescription,
                 contactPhone: fields.contactPhone,
+                observedAt: fields.observedAt,
                 emergency: fields.emergency,
                 photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
                 reportedByUserId: user._id,

@@ -20,6 +20,7 @@ vi.mock("@/lib/hazard-rate-limit", () => ({
 }));
 
 import { createHazard, listHazards } from "@/lib/hazard-store";
+import { saveHazardPhotos } from "@/lib/save-hazard-photos";
 import { getCurrentUser } from "@/lib/auth";
 import { checkHazardSubmissionRateLimit } from "@/lib/hazard-rate-limit";
 import { GET, POST } from "@/app/api/hazards/route";
@@ -67,6 +68,28 @@ describe("/api/hazards", () => {
             reportedByUserId: "user-1",
         }));
         await expect(response.json()).resolves.toEqual({ hazard: created });
+    });
+
+    test("POST accepts a multipart hazard report with a photo", async () => {
+        createHazard.mockResolvedValue({ id: "hazard-photo" });
+        saveHazardPhotos.mockResolvedValue(["https://images.example/hazard-photo.jpg"]);
+        const form = new FormData();
+        form.set("type", "road-accident");
+        form.set("severity", "medium");
+        form.set("lat", "19.076");
+        form.set("lng", "72.8777");
+        form.set("contactPhone", "+91 98765 43210");
+        form.append("photos", new File(["photo-data"], "evidence.jpg", { type: "image/jpeg" }));
+
+        const response = await POST(new Request("http://localhost/api/hazards", { method: "POST", body: form }));
+
+        expect(response.status).toBe(201);
+        expect(createHazard).toHaveBeenCalledWith(expect.objectContaining({
+            type: "road-accident",
+            contactPhone: "+91 98765 43210",
+            reportedByUserId: "user-1",
+            photoUrls: ["https://images.example/hazard-photo.jpg"],
+        }), expect.any(String));
     });
 
     test("POST requires a verified signed-in user", async () => {

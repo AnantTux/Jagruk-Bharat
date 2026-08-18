@@ -10,6 +10,7 @@ describe("hazard validation", () => {
             lng: "77.2090",
             description: "  Road is under water  ",
             locationDescription: "  Near the metro station  ",
+            contactPhone: "  +91 98765 43210  ",
             emergency: "true",
         })).toEqual({
             type: "flooding",
@@ -18,6 +19,7 @@ describe("hazard validation", () => {
             lng: 77.209,
             description: "Road is under water",
             locationDescription: "Near the metro station",
+            contactPhone: "+91 98765 43210",
             emergency: true,
             photoUrls: undefined,
         });

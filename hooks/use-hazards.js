@@ -37,7 +37,7 @@ async function postHazard({ input, photos }) {
     let response;
     if (photos?.length) {
         const form = new FormData();
-        ["type", "severity", "description", "locationDescription"].forEach((key) => {
+        ["type", "severity", "description", "locationDescription", "contactPhone"].forEach((key) => {
             if (input[key]) form.append(key, input[key]);
         });
         form.append("lat", String(input.lat));

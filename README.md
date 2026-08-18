@@ -2,6 +2,8 @@
 
 Community-powered public hazard reporting and live safety mapping across India. Report hazards on the map, follow live updates, and help people nearby make safer decisions.
 
+**Live demo:** [jagruk-bharat-web.onrender.com](https://jagruk-bharat-web.onrender.com)
+
 > [!IMPORTANT]
 > Jagruk Bharat is an experimental MVP created for educational and portfolio purposes. Community reports are not independently verified, and the platform is not affiliated with emergency services. In an emergency, contact the appropriate local authorities directly.
 

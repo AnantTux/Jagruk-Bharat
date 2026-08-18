@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, MailCheck, ShieldCheck, UserPlus } from "lucide-react";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, sendEmailVerification, signInWithPopup, signOut, updateProfile } from "firebase/auth";
+import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { INDIA_REGIONS } from "@/lib/india-regions";
 import { getFirebaseAuth } from "@/lib/firebase-client";
 
-const inputClass = "h-11 border-slate-600 bg-slate-700 text-white";
+const selectClass = "mt-2 h-11 w-full rounded-[var(--radius-control)] border border-input bg-white px-3 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-[3px] focus:ring-primary/20";
 
 export default function SignupPage() {
     const router = useRouter();
@@ -74,25 +75,43 @@ export default function SignupPage() {
         } catch (googleError) { setError(googleSignInMessage(googleError)); } finally { setSubmitting(false); }
     }
 
-    return <div className="flex min-h-screen flex-col bg-slate-900"><main className="flex flex-1 items-center justify-center p-4 py-10"><div className="w-full max-w-md">
-        <Link href="/" className="mb-6 inline-flex items-center text-sm text-slate-400 hover:text-white"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
-        <Card className="border-slate-700 bg-slate-800/90 shadow-lg"><CardHeader className="text-center"><div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400"><ShieldCheck className="h-7 w-7 text-slate-800" /></div><CardTitle className="text-2xl text-white">{verificationSent ? "Verify your email" : "Join Jagruk Bharat"}</CardTitle><CardDescription className="text-slate-300">{verificationSent ? `We sent a verification link to ${email}.` : "Create a verified account to report public hazards."}</CardDescription></CardHeader><CardContent>
-            {verificationSent ? <div className="space-y-4 text-center"><div className="rounded-md bg-slate-700 p-4 text-sm text-slate-200"><MailCheck className="mx-auto mb-2 h-6 w-6 text-amber-400" />Open the email from Firebase, click its verification link, then return here and sign in. Check spam/junk if it is not in your inbox.</div><Button className="w-full bg-amber-400 text-slate-900 hover:bg-amber-500" onClick={() => router.push("/login")}>Go to Sign In</Button></div> : <><div className="space-y-4">
-                {error && <p role="alert" className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
-                <Button type="button" disabled={submitting} onClick={() => void joinWithGoogle()} variant="outline" className="h-11 w-full border-blue-300 bg-white text-slate-800 hover:bg-blue-50"><span className="mr-2 font-bold text-blue-600">G</span>Continue with Google</Button>
-                <div className="flex items-center gap-3 text-xs text-slate-400"><span className="h-px flex-1 bg-slate-600" />or join with email<span className="h-px flex-1 bg-slate-600" /></div>
-                <form onSubmit={createAccount} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3"><div><Label htmlFor="firstName" className="text-white">First Name</Label><Input id="firstName" name="firstName" required maxLength={80} className={inputClass} /></div><div><Label htmlFor="lastName" className="text-white">Last Name</Label><Input id="lastName" name="lastName" required maxLength={80} className={inputClass} /></div></div>
-                <div><Label htmlFor="email" className="text-white">Email Address</Label><Input id="email" name="email" type="email" autoComplete="email" required className={inputClass} /></div>
-                <div><Label htmlFor="region" className="text-white">State or Union Territory</Label><select id="region" name="region" required className={`${inputClass} w-full rounded-md px-3`}><option value="">Select a region</option>{INDIA_REGIONS.map((region) => <option key={region.value} value={region.value}>{region.label}</option>)}</select></div>
-                <div><Label htmlFor="role" className="text-white">Role</Label><select id="role" name="role" className={`${inputClass} w-full rounded-md px-3`}><option value="citizen">Concerned Citizen</option><option value="first-responder">First Responder</option><option value="public-safety">Public Safety Professional</option><option value="researcher">Researcher</option><option value="other">Other</option></select></div>
-                <div><Label htmlFor="password" className="text-white">Password</Label><Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required className={inputClass} /><p className="mt-1 text-xs text-slate-400">Use at least 8 characters with a letter and number.</p></div>
-                <div><Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label><Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required className={inputClass} /></div>
-                <label className="flex gap-2 text-sm text-slate-300"><input type="checkbox" name="notificationsEnabled" className="accent-amber-400" /> Send me regional hazard-alert emails</label>
-                <Button disabled={submitting} className="h-11 w-full bg-amber-400 text-slate-900 hover:bg-amber-500"><UserPlus className="mr-2 h-4 w-4" /> {submitting ? "Creating…" : "Create Account"}</Button>
-                </form></div></>}
-            <p className="mt-6 text-center text-sm text-slate-400">Already registered? <Link href="/login" className="font-medium text-amber-400">Sign in</Link></p>
-        </CardContent></Card></div></main><SiteFooter compact /></div>;
+    return <div className="flex min-h-screen flex-col bg-background text-foreground">
+        <AppHeader showDashboard={false} />
+        <main className="flex flex-1 items-center justify-center px-4 py-12 sm:px-6">
+            <div className="w-full max-w-xl">
+                <Link href="/" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-[#0e539d]"><ArrowLeft className="h-4 w-4" /> Back to Home</Link>
+                <Card className="border-border bg-white">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-[var(--radius-control)] bg-primary-soft"><ShieldCheck className="h-7 w-7 text-primary" /></div>
+                        <CardTitle className="font-display text-[2rem] leading-[1.2] text-foreground">{verificationSent ? "Verify your email" : "Join Jagruk Bharat"}</CardTitle>
+                        <CardDescription>{verificationSent ? `We sent a verification link to ${email}.` : "Create a verified account to report public hazards."}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {verificationSent ? <div className="space-y-4 text-center">
+                            <div className="rounded-[var(--radius-control)] border border-border bg-subtle p-4 text-sm text-secondary"><MailCheck className="mx-auto mb-2 h-6 w-6 text-success" />Open the email from Firebase, click its verification link, then return here and sign in. Check spam/junk if it is not in your inbox.</div>
+                            <Button className="w-full" size="lg" onClick={() => router.push("/login")}>Go to Sign In</Button>
+                        </div> : <div className="space-y-4">
+                            {error && <p role="alert" className="rounded-[var(--radius-control)] border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
+                            <Button type="button" disabled={submitting} onClick={() => void joinWithGoogle()} variant="outline" size="lg" className="w-full"><span className="font-bold text-primary">G</span>Continue with Google</Button>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />or join with email<span className="h-px flex-1 bg-border" /></div>
+                            <form onSubmit={createAccount} className="space-y-4">
+                                <div className="grid gap-4 sm:grid-cols-2"><div><Label htmlFor="firstName">First Name</Label><Input id="firstName" name="firstName" required maxLength={80} /></div><div><Label htmlFor="lastName">Last Name</Label><Input id="lastName" name="lastName" required maxLength={80} /></div></div>
+                                <div><Label htmlFor="email">Email Address</Label><Input id="email" name="email" type="email" autoComplete="email" required /></div>
+                                <div><Label htmlFor="region">State or Union Territory</Label><select id="region" name="region" required className={selectClass}><option value="">Select a region</option>{INDIA_REGIONS.map((region) => <option key={region.value} value={region.value}>{region.label}</option>)}</select></div>
+                                <div><Label htmlFor="role">Role</Label><select id="role" name="role" className={selectClass}><option value="citizen">Concerned Citizen</option><option value="first-responder">First Responder</option><option value="public-safety">Public Safety Professional</option><option value="researcher">Researcher</option><option value="other">Other</option></select></div>
+                                <div><Label htmlFor="password">Password</Label><Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required /><p className="mt-1 text-xs text-muted-foreground">Use at least 8 characters with a letter and number.</p></div>
+                                <div><Label htmlFor="confirmPassword">Confirm Password</Label><Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required /></div>
+                                <label className="flex gap-2 text-sm text-secondary"><input type="checkbox" name="notificationsEnabled" className="accent-primary" /> Send me regional hazard-alert emails</label>
+                                <Button disabled={submitting} size="lg" className="w-full"><UserPlus className="h-4 w-4" /> {submitting ? "Creating…" : "Create Account"}</Button>
+                            </form>
+                        </div>}
+                        <p className="mt-6 text-center text-sm text-muted-foreground">Already registered? <Link href="/login" className="font-semibold text-primary hover:text-[#0e539d]">Sign in</Link></p>
+                    </CardContent>
+                </Card>
+            </div>
+        </main>
+        <SiteFooter compact />
+    </div>;
 }
 
 function googleSignInMessage(error) {

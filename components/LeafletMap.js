@@ -3,7 +3,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_ZOOM, INDIA_CENTER, severityColor } from "@/lib/hazard-utils";
 import { cn } from "@/lib/utils";
-export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFAULT_ZOOM, className = "h-[450px] w-full rounded-xl", selectedId, showHeatMap = false, onMarkerClick, onMapClick, pickMode = false, pickMarker, }) {
+export default function LeafletMap({ hazards, center = INDIA_CENTER, zoom = DEFAULT_ZOOM, className = "h-[450px] w-full rounded-[var(--radius-card)]", selectedId, showHeatMap = false, onMarkerClick, onMapClick, pickMode = false, pickMarker, }) {
     const containerRef = useRef(null);
     const mapRef = useRef(null);
     const layerGroupRef = useRef(null);

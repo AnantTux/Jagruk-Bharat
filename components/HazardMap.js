@@ -3,7 +3,7 @@ import { jsx as _jsx } from "react/jsx-runtime";
 import dynamic from "next/dynamic";
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), {
     ssr: false,
-    loading: () => _jsx("div", { className: "h-full min-h-[400px] w-full animate-pulse rounded-xl bg-slate-800" }),
+    loading: () => _jsx("div", { className: "h-full min-h-[400px] w-full animate-pulse rounded-[var(--radius-card)] border border-border bg-subtle" }),
 });
 export function HazardMap(props) {
     const { className, ...rest } = props;

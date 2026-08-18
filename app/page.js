@@ -1,10 +1,9 @@
 "use client";
 
 import { AlertTriangle, Phone } from "lucide-react";
-import { AuthNav } from "@/components/auth-nav";
+import { AppHeader } from "@/components/app-header";
 import { HazardMonitoring } from "@/components/hazard-monitoring";
 import { HomeHero } from "@/components/home-hero";
-import { SiteBrand } from "@/components/site-brand";
 import { SiteFooter } from "@/components/site-footer";
 import { useHazards } from "@/hooks/use-hazards";
 import { EMERGENCY_BANNER } from "@/lib/emergency";
@@ -14,7 +13,7 @@ export default function Page() {
     const { hazards, loading, error } = useHazards();
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-            <SiteHeader />
+            <AppHeader />
             <EmergencyBanner />
             <LatestAlert hazards={hazards} />
             <main className="relative">
@@ -26,25 +25,11 @@ export default function Page() {
     );
 }
 
-function SiteHeader() {
-    return (
-        <header className="relative z-50 bg-[#1264b9] text-white">
-            <div className="mx-auto flex max-w-[1600px] items-center justify-between px-5 py-3 lg:px-8">
-                <SiteBrand light />
-                <div className="hidden items-center gap-4 md:flex">
-                    <AuthNav light />
-                </div>
-            </div>
-            <div className="h-2 bg-[#78be4c]" />
-        </header>
-    );
-}
-
 function EmergencyBanner() {
     return (
-        <div className="relative overflow-hidden bg-red-600 text-white">
-            <div className="mx-auto flex max-w-[1600px] flex-col gap-1 px-5 py-2 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-                <div className="flex items-center gap-4 text-sm font-bold"><Phone className="h-4 w-4 shrink-0 animate-pulse" /><span className="text-xs sm:text-sm">{EMERGENCY_BANNER}</span></div>
+        <div className="relative overflow-hidden bg-destructive text-white">
+            <div className="mx-auto flex max-w-[1440px] flex-col gap-1 px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+                <div className="flex items-center gap-4 text-sm font-bold"><Phone className="h-4 w-4 shrink-0 animate-pulse" aria-hidden="true" /><span className="text-xs sm:text-sm">{EMERGENCY_BANNER}</span></div>
                 <span className="hidden text-xs italic opacity-80 lg:block">Jagruk Bharat reports do not dispatch emergency services</span>
             </div>
         </div>
@@ -52,5 +37,5 @@ function EmergencyBanner() {
 }
 
 function LatestAlert({ hazards }) {
-    return <div className="relative border-b border-blue-200 bg-blue-50 text-blue-950"><div className="mx-auto flex max-w-[1600px] items-center gap-2 px-5 py-2 text-sm font-bold lg:px-8"><AlertTriangle className="h-4 w-4 shrink-0" /><span className="line-clamp-2">{formatLatestAlert(hazards)}</span></div></div>;
+    return <div className="relative border-b border-primary/25 bg-[#e1effb] text-[#093f78]"><div className="mx-auto flex max-w-[1440px] items-center gap-2 px-4 py-2 text-sm font-semibold sm:px-6 lg:px-8"><AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" /><span className="line-clamp-2">{formatLatestAlert(hazards)}</span></div></div>;
 }

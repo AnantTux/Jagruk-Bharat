@@ -7,35 +7,35 @@ Community-powered public hazard reporting and live safety mapping across India. 
 
 ## Project status
 
-The core hazard-reporting workflow is functional: verified users can submit geolocated reports, attach photos, view reports on an interactive map, and vote on their reliability. Supported categories include road accidents, fires, flooding, landslides, blocked routes, unsafe infrastructure, electrical hazards, pollution, and severe weather. The social analytics dashboard still uses illustrative data.
+The core hazard-reporting workflow is functional: Firebase-verified users can sign in with Google or email/password, submit geolocated reports, attach photos, view reports on an interactive map, and vote on their reliability. Supported categories include road accidents, fires, flooding, landslides, blocked routes, unsafe infrastructure, electrical hazards, pollution, and severe weather. The social analytics dashboard still uses illustrative data.
 
 ## Features
 
 - **Live hazard map** — Interactive map with severity markers and hazard details
-- **Report hazards** — Submit type, severity, location, description, and photos
+- **Report hazards** — Submit type, severity, observation time, location, description, optional phone number, and up to five photos
 - **Dashboard** — India-wide map view for monitoring and filtering active reports
 - **Analytics** — Overview of hazard trends and activity
 - **Community verification** — Upvote or downvote reports to contribute to their trust score
-- **Accounts** — Verified email/password accounts, secure sessions, logout, suspension support, and password reset
-- **Privacy controls** — Public map coordinates are rounded, uploads are re-encoded to remove EXIF metadata, and users can flag harmful content for moderation
+- **Accounts** — Firebase Google and email/password sign-in, verified sessions, logout, suspension support, and password reset
+- **Privacy controls** — Public map coordinates are rounded, uploads are re-encoded to remove EXIF metadata, contact phone numbers stay private, and users can flag harmful content for moderation
+- **Safe reporting limits** — Only successfully saved reports count toward the limit of three reports per signed-in user per hour
 
 ## How it works
 
 1. A community member reports a public hazard and selects its location on the map.
 2. The report is validated by the API and stored in MongoDB.
-3. Submitted photos are saved with the report and displayed in its details.
+3. Submitted photos are checked, stripped of device metadata, stored in Cloudinary, and displayed in the report details.
 4. A WebSocket pushes new reports and votes to connected maps instantly. If that connection is unavailable, the app automatically uses long-polling instead.
 5. Community members can confirm or dispute reports through voting.
 
 ## Current limitations
 
 - Reports and emergency flags are community-submitted and do not notify emergency services.
-- Regional hazard-alert emails are not implemented yet; account verification and password-reset emails require Resend in production.
+- Firebase must be configured with the deployed website domain before Google sign-in can work.
 - Social-media analytics currently use illustrative sample data.
-- Photo uploads use Vercel Blob in production and local storage only during local development.
-- Native WebSockets require a long-running Node.js server. On Vercel, the app automatically uses long-polling until a managed realtime service is added.
-- Active reports expire after six hours unless their original reporter confirms they are still active. Configure an external scheduler to call the protected expiry endpoint every hour before deploying this feature.
-- Moderation, rate limiting, duplicate detection, and verified responder roles are not yet implemented.
+- Production photo uploads require Cloudinary; local development can use local file storage.
+- Active reports disappear from public results after six hours unless their original reporter confirms they are still active. The free Render configuration does not run the optional background expiry worker, so database status cleanup requires an external scheduler if needed.
+- Duplicate detection and regional alert emails are not implemented yet.
 
 ## Tech stack
 
@@ -51,7 +51,7 @@ The core hazard-reporting workflow is functional: verified users can submit geol
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) 22 or later
-- [pnpm](https://pnpm.io/) 9 or later
+- [pnpm](https://pnpm.io/) 11 or later
 - A MongoDB database: either [MongoDB Community Server](https://www.mongodb.com/try/download/community) running locally or a free [MongoDB Atlas](https://www.mongodb.com/atlas/database) cluster
 
 Confirm Node.js and pnpm are available:
@@ -149,12 +149,20 @@ Open [http://localhost:3000](http://localhost:3000). The first submitted report 
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Optional; only if you switch from Leaflet to Google Maps |
 | `MONGODB_URI` | MongoDB connection string used to persist hazard reports |
-| `RESEND_API_KEY` | Resend API key for account verification and password-reset emails in production |
-| `AUTH_EMAIL_FROM` | Sender address on a domain verified with Resend |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web app API key |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase Authentication domain |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase web app ID |
+| `FIREBASE_ADMIN_PROJECT_ID` | Firebase service-account project ID |
+| `FIREBASE_ADMIN_CLIENT_EMAIL` | Firebase service-account client email |
+| `FIREBASE_ADMIN_PRIVATE_KEY` | Firebase service-account private key; use literal `\n` between lines when setting it in a hosting dashboard |
 | `CRON_SECRET` | Long random value used to protect the automated report-expiry endpoint |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob read/write token for permanent production photo uploads |
+| `REDIS_URL` | Optional Redis connection for rate limits and queued maintenance; Render supplies this from its free Key Value service |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name for production photo uploads |
+| `CLOUDINARY_API_KEY` | Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret |
+| `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | Optional error monitoring; the app works normally when both are blank |
 
 ### Initial administrator
 
@@ -166,15 +174,27 @@ pnpm user:role you@example.com admin
 
 Administrators can then use `PATCH /api/admin/users/:id/role` to assign `citizen`, `responder`, `moderator`, or `admin`. Every role change is recorded in the audit log. Moderators can review flagged content through `GET` and `PATCH /api/admin/moderation`.
 
+### Free deployment on Render
+
+The repository includes [`render.yaml`](render.yaml) for a free Render web service and a free Render Key Value (Redis) instance. MongoDB Atlas and Cloudinary can both be used on their free plans.
+
+1. In Render, create a new Blueprint from this GitHub repository. Keep the generated web-service name, or use a name of your choice.
+2. Add the Firebase, MongoDB Atlas, and Cloudinary variables listed above. Render creates `CRON_SECRET` and links `REDIS_URL` automatically.
+3. In Firebase Console, enable the required sign-in providers and add the exact Render domain (for example, `your-service.onrender.com`) to **Authentication → Settings → Authorised domains**.
+4. For `FIREBASE_ADMIN_PRIVATE_KEY`, paste the private key as one line containing literal `\n` line breaks. Do not wrap the value in extra quotation marks.
+5. Deploy. Render checks `/api/health` to confirm the service is ready. Every push to `main` triggers a new deployment.
+
+Free Render services can sleep after inactivity, so the first request after a pause may take longer. The optional background worker is intentionally not deployed on the free plan.
+
 ### Privacy and content moderation
 
 Public map coordinates are intentionally rounded to approximately 100 metres. The exact point stays in MongoDB for server-side proximity checks. Uploaded images are signature-checked, resized, re-encoded as JPEG, and stripped of camera metadata before storage. Users can submit an abuse/privacy/misinformation flag at `POST /api/hazards/:id/flags`; staff can hide or reject a flagged hazard. Reports are assigned a 90-day retention timestamp for a scheduled cleanup worker.
 
-When the two email variables are omitted during local development, the signup and password-reset screens display the one-time development code. Production never returns these codes to the browser.
+Firebase delivers verification and password-reset emails. Configure the Firebase email templates and authorised domains in Firebase Console before testing these flows in production.
 
 ### Automated report expiry
 
-New reports stay active for six hours. A scheduler should make an hourly request to `GET /api/cron/expire-hazards` with the header `Authorization: Bearer <CRON_SECRET>`. It marks overdue reports as expired, removes them from the public map, and sends a live-update event. The original reporter can renew an active report with `POST /api/hazards/<id>/confirm-active` while signed in.
+New reports stay active for six hours. Public map queries automatically hide a report once its expiry time passes. If you also want overdue records marked `expired` in MongoDB, an external scheduler can make an hourly request to `GET /api/cron/expire-hazards` with the header `Authorization: Bearer <CRON_SECRET>`. The original reporter can renew an active report with `POST /api/hazards/<id>/confirm-active` while signed in.
 
 ### Account suspension
 
@@ -186,7 +206,7 @@ pnpm user:suspend user@example.com Repeated false reports
 
 Suspension immediately removes all sessions and prevents future login. The user record and moderation reason remain in MongoDB for review.
 
-Hazard reports are stored in MongoDB. In production, photos are stored in Vercel Blob; create a public Blob store connected to the Vercel project and it will provide `BLOB_READ_WRITE_TOKEN`. Local development continues to store uploads under `public/uploads/hazards/` (gitignored).
+Hazard reports are stored in MongoDB. In production, photos are stored in Cloudinary. Local development can store uploads under `public/uploads/hazards/` (gitignored).
 
 ### Nearby hazards API
 
@@ -201,7 +221,7 @@ Reports now store a MongoDB GeoJSON location with a `2dsphere` index. Clients ca
 | `pnpm start` | Run production server |
 | `pnpm lint` | Run ESLint with Next.js Core Web Vitals rules |
 | `pnpm test` | Run unit and API tests |
-| `pnpm test:e2e` | Run the browser-based report-flow test |
+| `pnpm test:e2e` | Run the browser tests for sign-up, report access, and live updates |
 | `pnpm check` | Run lint, unit/API tests, and the production build |
 | `pnpm user:suspend <email> [reason]` | Suspend an account and remove its active sessions |
 
@@ -243,4 +263,4 @@ Use Docker to run the app and a separate local MongoDB database on your computer
 
 4. Open http://localhost:3000.
 
-The Docker setup stores MongoDB data and locally uploaded photos in Docker volumes. It does not need a Vercel Blob token for local testing. Stop it with `docker compose down`. To erase only the local test database and uploaded test photos, use `docker compose down -v`.
+The Docker setup stores MongoDB data and locally uploaded photos in Docker volumes. It does not need production Cloudinary credentials for local testing. Stop it with `docker compose down`. To erase only the local test database and uploaded test photos, use `docker compose down -v`.

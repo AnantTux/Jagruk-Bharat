@@ -2,7 +2,8 @@ import { Queue, Worker } from "bullmq";
 import IORedis from "ioredis";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
-const appUrl = process.env.APP_INTERNAL_URL ?? "http://127.0.0.1:3000";
+const appUrl = process.env.APP_INTERNAL_URL
+    ?? (process.env.APP_INTERNAL_HOSTPORT ? `http://${process.env.APP_INTERNAL_HOSTPORT}` : "http://127.0.0.1:3000");
 const cronSecret = process.env.CRON_SECRET;
 const connection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
 const queue = new Queue("hazard-maintenance", { connection });

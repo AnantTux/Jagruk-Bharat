@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { createHazard, listHazards, publicHazard } from "@/lib/hazard-store";
+import { createHazard, deleteHazardForRateLimit, listHazards, publicHazard } from "@/lib/hazard-store";
 import { parseHazardFormData, validateHazardInput } from "@/lib/hazard-validation";
 import { randomUUID } from "crypto";
 import { getCurrentUser } from "@/lib/auth";
-import { checkHazardSubmissionRateLimit, getRequestIp } from "@/lib/hazard-rate-limit";
+import { getHazardSubmissionRateLimit, recordHazardSubmission, releaseHazardSubmission } from "@/lib/hazard-rate-limit";
 import { requireSameOrigin } from "@/lib/request-security";
 import { reportServerError } from "@/lib/error-reporting";
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export async function POST(request) {
         const user = await getCurrentUser();
         if (!user)
             return NextResponse.json({ error: "Sign in with a verified account to report a hazard." }, { status: 401 });
-        const rateLimit = await checkHazardSubmissionRateLimit(getRequestIp(request));
+        const rateLimit = await getHazardSubmissionRateLimit(String(user._id));
         if (!rateLimit.allowed) {
             return NextResponse.json({ error: "You can submit up to 3 hazard reports per hour." }, {
                 status: 429,
@@ -61,6 +61,15 @@ export async function POST(request) {
                 photoUrls: photoUrls.length > 0 ? photoUrls : undefined,
                 reportedByUserId: user._id,
             }, hazardId);
+            const recordedLimit = await recordHazardSubmission(String(user._id));
+            if (!recordedLimit.allowed) {
+                await deleteHazardForRateLimit(hazard.id, user._id);
+                await releaseHazardSubmission(String(user._id));
+                return NextResponse.json({ error: "You can submit up to 3 hazard reports per hour." }, {
+                    status: 429,
+                    headers: { "Retry-After": String(recordedLimit.retryAfterSeconds) },
+                });
+            }
             return NextResponse.json({ hazard: publicHazard(hazard) }, { status: 201 });
         }
         const body = (await request.json());
@@ -69,6 +78,15 @@ export async function POST(request) {
             return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
         }
         const hazard = await createHazard({ ...input, reportedByUserId: user._id });
+        const recordedLimit = await recordHazardSubmission(String(user._id));
+        if (!recordedLimit.allowed) {
+            await deleteHazardForRateLimit(hazard.id, user._id);
+            await releaseHazardSubmission(String(user._id));
+            return NextResponse.json({ error: "You can submit up to 3 hazard reports per hour." }, {
+                status: 429,
+                headers: { "Retry-After": String(recordedLimit.retryAfterSeconds) },
+            });
+        }
         return NextResponse.json({ hazard: publicHazard(hazard) }, { status: 201 });
     }
     catch (e) {
